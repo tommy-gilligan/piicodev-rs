@@ -1,0 +1,35 @@
+[package]
+name = "p13"
+version = "0.1.0"
+description = "d"
+keywords = ["button"]
+authors = [
+  "Thomas Gilligan <thomas.gilligan@icloud.com>",
+]
+categories.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[package.metadata]
+git-references = [
+    { url = "https://github.com/CoreElectronics/CE-PiicoDev-3x-RGB-LED-Module.git", sha = "afd2e878f9389ce49cdacc8e39a382eb24dcc957" },
+    { url = "https://github.com/CoreElectronics/CE-PiicoDev-RGB-LED-MicroPython-Module.git", sha = "59b4821f561e38030c29bf9a7df5af6350980e76" }
+]
+
+[dependencies]
+embedded-hal.workspace = true
+smart-leds-trait = "0.2.1"
+
+[target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
+cortex-m.workspace = true
+cortex-m-rt.workspace = true
+embedded-hal.workspace = true
+defmt.workspace = true
+defmt-rtt.workspace = true
+panic-probe.workspace = true
+fugit.workspace = true
+rp-pico.workspace = true
+
+[target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
+embedded-hal-mock.workspace = true

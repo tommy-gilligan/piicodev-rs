@@ -1,0 +1,11 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+markdown = "1.0.0-alpha.8"
+cargo_metadata = "0.15.4"
+
+[[bin]]
+name = "ci"
