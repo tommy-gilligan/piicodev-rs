@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 markdown = "1.0.0-alpha.8"
 cargo_metadata = "0.15.4"
+camino = "1.1.4"
 
 [[bin]]
 name = "ci"
