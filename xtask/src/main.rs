@@ -51,6 +51,16 @@ fn find_package(packages: &[Package], id: PackageId) -> Option<&Package> {
 }
 
 fn main() {
+    let cmd = clap::Command::new("xtask")
+        .bin_name("xtask")
+        .subcommand_required(true)
+        .subcommand(clap::command!("ci"));
+    let matches = cmd.get_matches();
+    let _matches = match matches.subcommand() {
+        Some(("ci", matches)) => matches,
+        _ => unreachable!("clap should ensure we don't get here"),
+    };
+
     let metadata = MetadataCommand::new()
         .manifest_path("./Cargo.toml")
         .features(CargoOpt::AllFeatures)

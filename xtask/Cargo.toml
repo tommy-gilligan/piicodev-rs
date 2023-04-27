@@ -7,6 +7,4 @@ edition = "2021"
 markdown = "1.0.0-alpha.8"
 cargo_metadata = "0.15.4"
 camino = "1.1.4"
-
-[[bin]]
-name = "ci"
+clap = { version = "4.2.4", features = ["cargo"] }
