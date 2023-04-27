@@ -11,12 +11,6 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
-[package.metadata]
-git-references = [
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-Colour-Sensor-VEML6040.git", sha = "2c2986eafe057aebe93e84157f217c598efd60cf" },
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-VEML6040-MicroPython-Module.git", sha = "8cb4fc8c2534a9b67a9cae50527892cd902c4b45" }
-]
-
 [dependencies]
 embedded-hal.workspace = true
 palette = { version = "0.7.1", default-features = false, features = ["libm"] }

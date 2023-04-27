@@ -11,12 +11,6 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
-[package.metadata]
-git-references = [
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-Pressure-Sensor-MS5637.git", sha = "7a55775b9c01417b9002f38384aa5bc11ea58a77" },
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-MS5637-MicroPython-Module.git", sha = "47c7c30d65ee9c189202e949030edcd816f4bfa7" }
-]
-
 [dependencies]
 embedded-hal.workspace = true
 measurements.workspace = true

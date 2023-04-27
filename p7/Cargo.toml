@@ -11,12 +11,6 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
-[package.metadata]
-git-references = [
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-Precision-Temperature-Sensor-TMP117.git", sha = "426af09299dc6ae9f254da7f45ef615f65c0f207" },
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-TMP117-MicroPython-Module.git", sha = "2678a75ac4efbc8c9a16ceb55335108b04460996" }
-]
-
 [dependencies]
 embedded-hal.workspace = true
 measurements.workspace = true

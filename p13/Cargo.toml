@@ -11,12 +11,6 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
-[package.metadata]
-git-references = [
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-3x-RGB-LED-Module.git", sha = "afd2e878f9389ce49cdacc8e39a382eb24dcc957" },
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-RGB-LED-MicroPython-Module.git", sha = "59b4821f561e38030c29bf9a7df5af6350980e76" }
-]
-
 [dependencies]
 embedded-hal.workspace = true
 smart-leds-trait = "0.2.1"

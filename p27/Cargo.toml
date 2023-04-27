@@ -11,12 +11,6 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
-[package.metadata]
-git-references = [
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-Transceiver-915-MHz.git", sha = "b7b5da00014e3c9bc98617ebd7cdf4babc00639b" },
-    { url = "https://github.com/CoreElectronics/CE-PiicoDev-Transceiver-MicroPython-Module.git", sha = "2c3e4423b86cfcb372a998f5bbc74319162b9a85" }
-]
-
 [dependencies]
 embedded-hal.workspace = true
 
