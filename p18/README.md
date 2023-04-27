@@ -1,3 +1,3 @@
-[Official Hardware Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Precision-Temperature-Sensor-TMP117/tree/426af09299dc6ae9f254da7f45ef615f65c0f207
-[Official Software Repository]: https://github.com/CoreElectronics/CE-PiicoDev-TMP117-MicroPython-Module/tree/2678a75ac4efbc8c9a16ceb55335108b04460996
+[Official Hardware Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Buzzer/tree/a3be5160105aa1b62cc5ea01a09b57bd95dbc7fd
+[Official Software Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Buzzer-MicroPython-Module/tree/f33f1b08d48f8745377f929bd19472bb967bb36b
 [Official Product Site]: https://piico.dev/p18

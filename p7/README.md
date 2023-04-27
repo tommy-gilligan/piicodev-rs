@@ -1,3 +1,3 @@
-[Official Hardware Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Precision-Temperature-Sensor-TMP117/tree/426af09299dc6ae9f254da7f45ef615f65c0f207
-[Official Software Repository]: https://github.com/CoreElectronics/CE-PiicoDev-TMP117-MicroPython-Module/tree/2678a75ac4efbc8c9a16ceb55335108b04460996
+[Official Hardware Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Distance-Sensor-VL53L1X/tree/ccfc11da73045dc5f71e220fda5292518e054b60
+[Official Software Repository]: https://github.com/CoreElectronics/CE-PiicoDev-VL53L1X-MicroPython-Module/tree/75e6f56170bd57c07f948f3c62e96b47c07c1ef1
 [Official Product Site]: https://piico.dev/p7

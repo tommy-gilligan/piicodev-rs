@@ -1,3 +1,3 @@
-[Official Hardware Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Precision-Temperature-Sensor-TMP117/tree/426af09299dc6ae9f254da7f45ef615f65c0f207
-[Official Software Repository]: https://github.com/CoreElectronics/CE-PiicoDev-TMP117-MicroPython-Module/tree/2678a75ac4efbc8c9a16ceb55335108b04460996
+[Official Hardware Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Slide-Potentiometer/tree/33bdc7dce717f466197d7363b005aaf69f7caac6
+[Official Software Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Potentiometer-MicroPython-Module/tree/bdb408159cab040e7d374f5254e4d4700088422e
 [Official Product Site]: https://piico.dev/p22
