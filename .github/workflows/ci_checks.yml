@@ -45,6 +45,18 @@ jobs:
           components: clippy
           target: thumbv6m-none-eabi
       - run: cargo clippy --all-features -- --deny=warnings
+  testing:
+    name: Testing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          target: thumbv6m-none-eabi
+      - run: cargo test
   formatting:
     name: Formatting
     runs-on: ubuntu-latest
