@@ -40,7 +40,7 @@ const RFM69_REG_FRFLSB: u8 = 0x09;
 
 impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     /// # Errors
-    pub fn new(i2c: I2C, delay: DELAY, address: Address) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: Address, delay: DELAY) -> Result<Self, I2C::Error> {
         let mut res = Self {
             i2c,
             delay,
@@ -55,7 +55,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
             res.delay.delay_ms(10);
         }
         res.i2c
-            .write(res.address as u8, &[REG_RFM69_NETWORK_ID, 0, 0])?;
+            .write(res.address as u8, &[REG_RFM69_NETWORK_ID, 0])?;
 
         res.set_radio_frequency(922)?;
         res.set_speed(2)?;
@@ -144,13 +144,21 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 
     /// # Errors
-    pub fn get_speed(&mut self) -> Result<(u8, u8), I2C::Error> {
+    pub fn get_speed(&mut self) -> Result<u8, I2C::Error> {
         self.delay.delay_ms(10);
         let msb = self.get_rfm69_register(RFM69_REG_BITRATEMSB)?;
         self.delay.delay_ms(10);
         let lsb = self.get_rfm69_register(RFM69_REG_BITRATELSB)?;
         self.delay.delay_ms(10);
-        Ok((msb, lsb))
+
+        let speed = match (msb, lsb) {
+            (0x0D, 0x05) => 1,
+            (0x01, 0x16) => 2,
+            (0x00, 0x6B) => 3,
+            _ => 2,
+        };
+
+        Ok(speed)
     }
 
     /// # Errors
@@ -171,7 +179,10 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 
     /// # Errors
-    pub fn get_radio_frequency(&mut self) -> Result<(u8, u8, u8), I2C::Error> {
+    pub fn get_radio_frequency(&mut self) -> Result<u16, I2C::Error> {
+        while !(self.transceiver_ready()?) {
+            self.delay.delay_ms(10);
+        }
         self.delay.delay_ms(5);
         let msb = self.get_rfm69_register(RFM69_REG_FRFMSB)?;
         self.delay.delay_ms(5);
@@ -179,7 +190,18 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         self.delay.delay_ms(5);
         let lsb = self.get_rfm69_register(RFM69_REG_FRFLSB)?;
         self.delay.delay_ms(5);
-        Ok((msb, mid, lsb))
+
+        let frequency = match (msb, mid, lsb) {
+            (0xE4, 0xC0, 0x00) => 915,
+            (0xE5, 0x80, 0x00) => 918,
+            (0xE6, 0xC0, 0x00) => 922,
+            (0xE7, 0x40, 0x00) => 925,
+            (0xE8, 0x00, 0x00) => 928,
+            // should be an error
+            _ => 915,
+        };
+
+        Ok(frequency)
     }
 
     /// # Errors
@@ -208,22 +230,21 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 
     /// # Errors
-    pub fn get_tx_power(&mut self) -> Result<u8, I2C::Error> {
+    pub fn get_tx_power(&mut self) -> Result<i8, I2C::Error> {
         let mut data: [u8; 1] = [0];
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        self.i2c
-            .write_read(self.address as u8, &[REG_TX_POWER], &mut data)?;
-        Ok(data[0])
+        self.i2c.write_read(self.address as u8, &[REG_TX_POWER], &mut data)?;
+        Ok(data[0] as i8)
     }
 
     /// # Errors
-    pub fn set_tx_power(&mut self, _value: i8) -> Result<(), I2C::Error> {
+    pub fn set_tx_power(&mut self, value: i8) -> Result<(), I2C::Error> {
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        self.i2c.write(self.address as u8, &[REG_TX_POWER, 20])?;
+        self.i2c.write(self.address as u8, &[REG_TX_POWER, value as u8])?;
         Ok(())
     }
 
@@ -345,10 +366,10 @@ mod test {
             I2cTransaction::write(0x09, vec![0x15, 0x00, 0x00]),
             I2cTransaction::write_read(0x09, vec![0x25], vec![0x00]),
             I2cTransaction::write_read(0x09, vec![0x25], vec![0x01]),
-            I2cTransaction::write(0x09, vec![0x15, 0x16, 0x00]),
+            I2cTransaction::write(0x09, vec![0x16, 0x00]),
             I2cTransaction::write_read(0x09, vec![0x25], vec![0x01]),
             I2cTransaction::write(0x09, vec![0x18, 0x07]),
-            I2cTransaction::write(0x09, vec![0x19, 0xE4]),
+            I2cTransaction::write(0x09, vec![0x19, 0xE6]),
             I2cTransaction::write(0x09, vec![0x18, 0x08]),
             I2cTransaction::write(0x09, vec![0x19, 0xC0]),
             I2cTransaction::write(0x09, vec![0x18, 0x09]),
@@ -364,7 +385,111 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P27::new(i2c, MockNoop {}, Address::X09).unwrap();
+        P27::new(i2c, Address::X09, MockNoop {}).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_radio_frequency() {
+        let expectations = [
+            I2cTransaction::write_read(0x09, vec![0x25], vec![0x01]),
+            I2cTransaction::write(0x09, vec![0x18, 0x07]),
+            I2cTransaction::write(0x09, vec![0x19, 0xE5]),
+            I2cTransaction::write(0x09, vec![0x18, 0x08]),
+            I2cTransaction::write(0x09, vec![0x19, 0x80]),
+            I2cTransaction::write(0x09, vec![0x18, 0x09]),
+            I2cTransaction::write(0x09, vec![0x19, 0x00]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        p27.set_radio_frequency(918).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn get_radio_frequency() {
+        let expectations = [
+            I2cTransaction::write_read(0x09, vec![0x25], vec![0x01]),
+            I2cTransaction::write(0x09, vec![0x18, 0x07]),
+            I2cTransaction::write_read(0x09, vec![0x19], vec![0xE7]),
+            I2cTransaction::write(0x09, vec![0x18, 0x08]),
+            I2cTransaction::write_read(0x09, vec![0x19], vec![0x40]),
+            I2cTransaction::write(0x09, vec![0x18, 0x09]),
+            I2cTransaction::write_read(0x09, vec![0x19], vec![0x00]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        p27.get_radio_frequency().unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_speed() {
+        let expectations = [
+            I2cTransaction::write(0x09, vec![0x18, 0x03]),
+            I2cTransaction::write(0x09, vec![0x19, 0x0D]),
+            I2cTransaction::write(0x09, vec![0x18, 0x04]),
+            I2cTransaction::write(0x09, vec![0x19, 0x05]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        p27.set_speed(1).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn get_speed() {
+        let expectations = [
+            I2cTransaction::write(0x09, vec![0x18, 0x03]),
+            I2cTransaction::write_read(0x09, vec![0x19], vec![0x00]),
+            I2cTransaction::write(0x09, vec![0x18, 0x04]),
+            I2cTransaction::write_read(0x09, vec![0x19], vec![0x6B]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        assert_eq!(p27.get_speed(), Ok(3));
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_tx_power() {
+        let expectations = [
+            I2cTransaction::write_read(0x09, vec![0x25], vec![0x01]),
+            I2cTransaction::write(0x09, vec![0x13, 0x03]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        p27.set_tx_power(3).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn get_tx_power() {
+        let expectations = [
+            I2cTransaction::write_read(0x09, vec![0x25], vec![0x01]),
+            I2cTransaction::write_read(0x09, vec![0x13], vec![-1i8 as u8]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        assert_eq!(p27.get_tx_power(), Ok(-1));
 
         i2c_clone.done();
     }
