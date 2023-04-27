@@ -8,13 +8,13 @@ use cargo_metadata::{CargoOpt, MetadataCommand, Package, PackageId};
 
 const REQUIRED_LINKS: [&str; 3] = [
     "Official Hardware Repository",
-    "Official Software Repository",
+    "Official MicroPython Repository",
     "Official Product Site",
 ];
 
 const UNIQUE_LINKS: [&str; 4] = [
     "Official Hardware Repository",
-    "Official Software Repository",
+    "Official MicroPython Repository",
     "Official Product Site",
     "Datasheet",
 ];
