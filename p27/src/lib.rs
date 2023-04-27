@@ -235,7 +235,8 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        self.i2c.write_read(self.address as u8, &[REG_TX_POWER], &mut data)?;
+        self.i2c
+            .write_read(self.address as u8, &[REG_TX_POWER], &mut data)?;
         Ok(data[0] as i8)
     }
 
@@ -244,7 +245,8 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        self.i2c.write(self.address as u8, &[REG_TX_POWER, value as u8])?;
+        self.i2c
+            .write(self.address as u8, &[REG_TX_POWER, value as u8])?;
         Ok(())
     }
 
@@ -404,7 +406,11 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: Address::X09,
+        };
         p27.set_radio_frequency(918).unwrap();
 
         i2c_clone.done();
@@ -424,7 +430,11 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: Address::X09,
+        };
         p27.get_radio_frequency().unwrap();
 
         i2c_clone.done();
@@ -441,7 +451,11 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: Address::X09,
+        };
         p27.set_speed(1).unwrap();
 
         i2c_clone.done();
@@ -458,7 +472,11 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: Address::X09,
+        };
         assert_eq!(p27.get_speed(), Ok(3));
 
         i2c_clone.done();
@@ -473,7 +491,11 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: Address::X09,
+        };
         p27.set_tx_power(3).unwrap();
 
         i2c_clone.done();
@@ -488,7 +510,11 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p27 = P27 { i2c, delay: MockNoop {}, address: Address::X09 };
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: Address::X09,
+        };
         assert_eq!(p27.get_tx_power(), Ok(-1));
 
         i2c_clone.done();
