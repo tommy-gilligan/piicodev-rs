@@ -3,7 +3,7 @@
 [Official Product Site]: https://piico.dev/p1
 [Datasheet]: https://www.ti.com/product/TMP117
 
-# Unofficial PiicoDev Precision Temperature Sensor Crate
+# Precision Temperature Sensor
 - [Official Hardware Repository]
 - [Official Software Repository]
 - [Official Product Site]

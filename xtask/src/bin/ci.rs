@@ -1,4 +1,4 @@
-use markdown::mdast::Definition;
+use markdown::mdast::{Definition, Heading};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -32,6 +32,16 @@ fn find_definition<'a>(
             {
                 Some(definition)
             }
+            _ => None,
+        })
+}
+
+fn find_main_heading(node: &markdown::mdast::Node) -> Option<&Heading> {
+    node.children()
+        .unwrap()
+        .iter()
+        .find_map(|node| match *node {
+            markdown::mdast::Node::Heading(ref heading) => Some(heading),
             _ => None,
         })
 }
@@ -79,6 +89,9 @@ fn main() {
             if readme_paths.len() > 1 {
                 panic!("duplicate url {} in {:?}", url, readme_paths);
             }
+        }
+        if find_main_heading(&mdast).is_none() {
+            panic!("no heading in {:?}", readme_path);
         }
     }
 }
