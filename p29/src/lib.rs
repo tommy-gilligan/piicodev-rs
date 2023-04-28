@@ -87,6 +87,24 @@ mod test {
     use crate::{Address, P29};
 
     #[test]
+    pub fn new() {
+        let expectations = [
+            I2cTransaction::write(0x44, vec![0x00, 0x00]),
+            I2cTransaction::write_read(0x44, vec![0x00], vec![0x70]),
+            I2cTransaction::write(0x44, vec![0x00, 0x70]),
+            I2cTransaction::write(0x44, vec![0xfe, 122]),
+            I2cTransaction::write(0x44, vec![0x00, 0x70]),
+            I2cTransaction::write(0x44, vec![0x00, 0xF1]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        P29::new(i2c, Address::X44, MockNoop {}).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
     pub fn reset() {
         let expectations = [I2cTransaction::write(0x44, vec![0x00, 0x00])];
         let i2c = I2cMock::new(&expectations);

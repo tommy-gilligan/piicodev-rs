@@ -241,7 +241,7 @@ mod test {
     }
 
     #[test]
-    pub fn self_test() {
+    pub fn self_test_ok() {
         let expectations = [I2cTransaction::write_read(0x5C, vec![0x09], vec![0x01])];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
@@ -249,6 +249,18 @@ mod test {
         let mut p18 = P18::new(i2c, Address::X5C);
 
         assert_eq!(p18.self_test(), Ok(true));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn self_test_not_ok() {
+        let expectations = [I2cTransaction::write_read(0x5C, vec![0x09], vec![0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p18 = P18::new(i2c, Address::X5C);
+
+        assert_eq!(p18.self_test(), Ok(false));
         i2c_clone.done();
     }
 }

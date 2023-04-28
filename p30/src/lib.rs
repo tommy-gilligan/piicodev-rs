@@ -240,7 +240,7 @@ mod test {
     }
 
     #[test]
-    pub fn self_test() {
+    pub fn self_test_ok() {
         let expectations = [I2cTransaction::write_read(0x35, vec![0x09], vec![0x01])];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
@@ -252,6 +252,22 @@ mod test {
         };
 
         assert_eq!(p30.self_test(), Ok(true));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn self_test_not_ok() {
+        let expectations = [I2cTransaction::write_read(0x35, vec![0x09], vec![0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p30 = P30 {
+            i2c,
+            address: Address::X35,
+            millimeters_per_microsecond: 3.2f64,
+        };
+
+        assert_eq!(p30.self_test(), Ok(false));
         i2c_clone.done();
     }
 

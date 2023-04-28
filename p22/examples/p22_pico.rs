@@ -77,6 +77,7 @@ mod arm {
 
         loop {
             info!("{:?}", p22.raw().unwrap());
+            info!("{:?}", p22.self_test().unwrap());
             info!("light on!");
             led_pin.set_high().unwrap();
             delay.delay_ms(500);

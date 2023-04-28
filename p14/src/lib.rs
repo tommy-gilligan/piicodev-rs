@@ -49,7 +49,6 @@ impl<I2C: I2c> P14<I2C> {
         };
 
         for cmd in [
-            // compare these values to evaluated python values
             SET_DISP,
             SET_MEM_ADDR,
             0x00,
@@ -78,7 +77,6 @@ impl<I2C: I2c> P14<I2C> {
             0x14,
             SET_DISP | 0x01,
         ] {
-            // every time write_cmd is called, do this
             res.i2c.write(res.address as u8, &[0x80, cmd])?;
         }
         Ok(res)
@@ -190,7 +188,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let _p14 = P14::new(i2c, Address::X3C).unwrap();
+        P14::new(i2c, Address::X3C).unwrap();
         i2c_clone.done();
     }
 
