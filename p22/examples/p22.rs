@@ -1,17 +1,37 @@
 #![no_std]
 #![no_main]
 
-#[cfg(not(all(target_arch = "arm", target_os = "none")))]
-mod not_arm {
+#[cfg(target_os = "linux")]
+mod linux {
     extern crate std;
+    use linux_embedded_hal::I2cdev;
+    use p22::{Address, P22};
+    use std::println;
     #[no_mangle]
     pub extern "C" fn main() {
-        std::println!("unsupported target");
+        let i2c = I2cdev::new("/dev/i2c-1").unwrap();
+        let mut p22 = P22::new(i2c, Address::X35);
+
+        loop {
+            println!("{:?}", p22.raw().unwrap());
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "none")))]
+mod other {
+    extern crate std;
+    use std::println;
+    #[no_mangle]
+    pub extern "C" fn main() {
+        loop {
+            println!("unsupported target");
+        }
     }
 }
 
 #[cfg(all(target_arch = "arm", target_os = "none"))]
-mod arm {
+mod pico {
     use defmt::*;
     use defmt_rtt as _;
     use embedded_hal::digital::OutputPin;

@@ -32,7 +32,9 @@ jobs:
           target: thumbv6m-none-eabi
       - run: cargo install flip-link
       - run: cargo build --all
+      - run: cargo build --all --lib --examples
       - run: cargo build --all --release
+      - run: cargo build --all --release --lib --examples
   linting:
     name: Linting
     runs-on: ubuntu-latest

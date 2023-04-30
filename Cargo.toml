@@ -18,6 +18,7 @@ measurements = "0.11"
 panic-probe = { version = ">=0.3", features = ["print-defmt"] }
 rp-pico = { git = "https://github.com/tomgilligan/rp-hal-boards.git" }
 embedded-hal-mock = { git = "https://github.com/dbrgn/embedded-hal-mock.git", branch = "1-alpha" }
+linux-embedded-hal = { git = "https://github.com/tomgilligan/linux-embedded-hal.git" }
 
 # cargo build/run
 [profile.dev]
