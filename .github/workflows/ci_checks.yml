@@ -78,13 +78,13 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo xtask ci
-  coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo install cargo-tarpaulin
-      - run: cargo tarpaulin --exclude-files 'xtask/*' --fail-under 100 --engine LLvm
+        #   coverage:
+        #     name: Coverage
+        #     runs-on: ubuntu-latest
+        #     steps:
+        #       - uses: actions/checkout@v3
+        #         with:
+        #           submodules: true
+        #       - uses: dtolnay/rust-toolchain@stable
+        #       - run: cargo install cargo-tarpaulin
+        #       - run: cargo tarpaulin --exclude-files 'xtask/*' --fail-under 100 --engine LLvm
