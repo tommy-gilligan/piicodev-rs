@@ -201,9 +201,9 @@ mod test {
     #[test]
     pub fn read_delta_counts() {
         let expectations = [
-            I2cTransaction::write_read(0x28, vec![0x10], vec![-5i8 as u8]),
-            I2cTransaction::write_read(0x28, vec![0x11], vec![-56i8 as u8]),
-            I2cTransaction::write_read(0x28, vec![0x12], vec![93i8 as u8]),
+            I2cTransaction::write_read(0x28, vec![0x10], vec![0xFB]),
+            I2cTransaction::write_read(0x28, vec![0x11], vec![0xC8]),
+            I2cTransaction::write_read(0x28, vec![0x12], vec![93]),
         ];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
