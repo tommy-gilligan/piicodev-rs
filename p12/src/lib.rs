@@ -123,21 +123,21 @@ mod test {
 
     use crate::P12;
 
-    // #[test]
-    // pub fn new() {
-    //     let expectations = [
-    //         I2cTransaction::write_read(0x28, vec![0x2A], vec![0xF4]),
-    //         I2cTransaction::write(0x28, vec![0x2A, 0x70]),
-    //         I2cTransaction::write_read(0x28, vec![0x1F], vec![0x70]),
-    //         I2cTransaction::write(0x28, vec![0x1F]),
-    //     ];
-    //     let i2c = I2cMock::new(&expectations);
-    //     let mut i2c_clone = i2c.clone();
+    #[test]
+    pub fn new() {
+        let expectations = [
+            I2cTransaction::write_read(0x28, vec![0x2A], vec![0xF4]),
+            I2cTransaction::write(0x28, vec![0x2A, 0x74]),
+            I2cTransaction::write_read(0x28, vec![0x1F], vec![0x70]),
+            I2cTransaction::write(0x28, vec![0x1F, 0x30]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
 
-    //     P12::new(i2c, 0x28, None, None).unwrap();
+        P12::new(i2c, 0x28, None, None).unwrap();
 
-    //     i2c_clone.done();
-    // }
+        i2c_clone.done();
+    }
 
     #[test]
     pub fn get_sensitivity() {
