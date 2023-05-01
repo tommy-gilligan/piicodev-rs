@@ -232,7 +232,6 @@ mod test {
     #[test]
     pub fn read_eeprom() {
         let expectations = [
-            I2cTransaction::write(0x76, vec![0x1E]),
             I2cTransaction::write_read(0x76, vec![0xA0], vec![0x02, 0x01]),
             I2cTransaction::write_read(0x76, vec![0xA2], vec![0x03, 0x02]),
             I2cTransaction::write_read(0x76, vec![0xA4], vec![0x04, 0x03]),
@@ -244,7 +243,13 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p11 = P11::new(i2c, 0x76, MockNoop {}).unwrap();
+        let mut p11 = P11 {
+            i2c,
+            address: 0x76,
+            delay: MockNoop {},
+            coefficient_valid: false,
+            eeprom_coefficient: [0; 7],
+        };
 
         assert_eq!(
             p11.read_eeprom().unwrap(),
@@ -261,14 +266,19 @@ mod test {
     #[test]
     pub fn conversion_read_adc() {
         let expectations = [
-            I2cTransaction::write(0x76, vec![0x1E]),
             I2cTransaction::write(0x76, vec![90]),
             I2cTransaction::write_read(0x76, vec![0], vec![0x08, 0x07, 0x06]),
         ];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p11 = P11::new(i2c, 0x76, MockNoop {}).unwrap();
+        let mut p11 = P11 {
+            i2c,
+            address: 0x76,
+            delay: MockNoop {},
+            coefficient_valid: false,
+            eeprom_coefficient: [0; 7],
+        };
 
         assert_eq!(p11.conversion_read_adc(90, 0).unwrap(), 0x0008_0706);
         i2c_clone.done();
