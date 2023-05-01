@@ -2,7 +2,8 @@
 name = "p30"
 version = "0.1.0"
 description = "d"
-keywords = ["button"]
+# should find part number for ultrasonic
+keywords = ["Distance", "Ultrasonic", "Rangefinder", "PiicoDev"]
 authors = [
   "Thomas Gilligan <thomas.gilligan@icloud.com>",
 ]

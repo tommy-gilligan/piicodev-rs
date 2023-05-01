@@ -71,8 +71,17 @@ fn main() {
                 .filter(|package_id| package_id.repr.starts_with('p'));
 
             let mut links: HashMap<String, Vec<camino::Utf8PathBuf>> = HashMap::new();
+            let mut all_keywords: HashMap<String, u8> = HashMap::new();
             for member_package_id in workspace_members {
                 let package = find_package(&metadata.packages, &member_package_id).unwrap();
+
+                let keywords = &mut package.keywords.clone();
+                keywords.sort();
+                all_keywords
+                    .entry(keywords.join(","))
+                    .and_modify(|v| *v += 1)
+                    .or_insert_with(|| 1);
+
                 let readme_path = package.readme().unwrap();
                 let mut file = File::open(readme_path.clone()).unwrap();
                 let mut contents = String::new();
@@ -93,16 +102,19 @@ fn main() {
                             .or_insert_with(|| vec![readme_path.clone()]);
                     }
                 }
-                for (url, readme_paths) in &links {
-                    assert!(
-                        readme_paths.len() <= 1,
-                        "duplicate url {url} in {readme_paths:?}"
-                    );
-                }
                 assert!(
                     find_main_heading(&mdast).is_some(),
                     "no heading in {readme_path:?}"
                 );
+            }
+            for (url, readme_paths) in &links {
+                assert!(
+                    readme_paths.len() <= 1,
+                    "duplicate url {url} in {readme_paths:?}"
+                );
+            }
+            for (keywords, len) in &all_keywords {
+                assert!(*len <= 1, "duplicate keywords {keywords}");
             }
         }
         _ => unreachable!("clap should ensure we don't get here"),

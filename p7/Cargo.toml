@@ -2,7 +2,7 @@
 name = "p7"
 version = "0.1.0"
 description = "d"
-keywords = ["button"]
+keywords = ["VL53L1X", "Distance", "Sensor", "PiicoDev"]
 authors = [
   "Thomas Gilligan <thomas.gilligan@icloud.com>",
 ]
