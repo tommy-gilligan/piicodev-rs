@@ -4,11 +4,6 @@ use embedded_graphics::Pixel;
 use embedded_graphics::{draw_target::DrawTarget, geometry::Size, pixelcolor::BinaryColor};
 use embedded_hal::i2c::I2c;
 
-#[derive(Copy, Clone)]
-pub enum Address {
-    X3C = 0x3C,
-}
-
 const SET_CONTRAST: u8 = 0x81;
 const SET_ENTIRE_ON: u8 = 0xA4;
 const SET_NORM_INV: u8 = 0xA6;
@@ -35,13 +30,13 @@ const BUFFER_SIZE: usize = PAGES * WIDTH;
 
 pub struct P14<I2C> {
     i2c: I2C,
-    address: Address,
+    address: u8,
     framebuffer: [u8; BUFFER_SIZE],
 }
 
 impl<I2C: I2c> P14<I2C> {
     /// # Errors
-    pub fn new(i2c: I2C, address: Address) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
         let mut res = Self {
             i2c,
             address,
@@ -77,7 +72,7 @@ impl<I2C: I2c> P14<I2C> {
             0x14,
             SET_DISP | 0x01,
         ] {
-            res.i2c.write(res.address as u8, &[0x80, cmd])?;
+            res.i2c.write(res.address, &[0x80, cmd])?;
         }
         Ok(res)
     }
@@ -86,20 +81,19 @@ impl<I2C: I2c> P14<I2C> {
     pub fn show(&mut self) -> Result<(), I2C::Error> {
         let x0: usize = 0;
         let x1: usize = WIDTH - 1;
-        self.i2c.write(self.address as u8, &[0x80, SET_COL_ADDR])?;
-        self.i2c.write(self.address as u8, &[0x80, x0 as u8])?;
-        self.i2c.write(self.address as u8, &[0x80, x1 as u8])?;
-        self.i2c.write(self.address as u8, &[0x80, SET_PAGE_ADDR])?;
-        self.i2c.write(self.address as u8, &[0x80, 0])?;
-        self.i2c
-            .write(self.address as u8, &[0x80, PAGES as u8 - 1])?;
+        self.i2c.write(self.address, &[0x80, SET_COL_ADDR])?;
+        self.i2c.write(self.address, &[0x80, x0 as u8])?;
+        self.i2c.write(self.address, &[0x80, x1 as u8])?;
+        self.i2c.write(self.address, &[0x80, SET_PAGE_ADDR])?;
+        self.i2c.write(self.address, &[0x80, 0])?;
+        self.i2c.write(self.address, &[0x80, PAGES as u8 - 1])?;
 
         let mut i2c_buffer: [u8; 1025] = [0x40; 1025];
         for (i, val) in self.framebuffer.iter().enumerate() {
             i2c_buffer[i + 1] = *val;
         }
 
-        self.i2c.write(self.address as u8, &i2c_buffer)?;
+        self.i2c.write(self.address, &i2c_buffer)?;
         Ok(())
     }
 }
@@ -152,7 +146,7 @@ mod test {
     };
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::{Address, P14};
+    use crate::P14;
 
     #[test]
     pub fn new() {
@@ -188,7 +182,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P14::new(i2c, Address::X3C).unwrap();
+        P14::new(i2c, 0x3C).unwrap();
         i2c_clone.done();
     }
 
@@ -211,7 +205,7 @@ mod test {
 
         let mut p14 = P14 {
             i2c,
-            address: Address::X3C,
+            address: 0x3C,
             framebuffer: [0x0f; 1024],
         };
         p14.show().unwrap();
@@ -223,7 +217,7 @@ mod test {
         let i2c = I2cMock::new(&[]);
         let p14 = P14 {
             i2c,
-            address: Address::X3C,
+            address: 0x3C,
             framebuffer: [0; 1024],
         };
         assert_eq!(p14.size(), Size::new(128, 64));
@@ -234,7 +228,7 @@ mod test {
         let i2c = I2cMock::new(&[]);
         let mut p14 = P14 {
             i2c,
-            address: Address::X3C,
+            address: 0x3C,
             framebuffer: [0; 1024],
         };
 

@@ -2,15 +2,9 @@
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 
-#[derive(Copy, Clone)]
-pub enum Address {
-    X10 = 0x10,
-    X48 = 0x48,
-}
-
 pub struct P3<I2C, DELAY> {
     i2c: I2C,
-    address: Address,
+    address: u8,
     delay: DELAY,
 }
 
@@ -20,14 +14,13 @@ const DEFAULT_SETTINGS: u8 = 0x00;
 
 impl<I2C: I2c, DELAY: DelayUs> P3<I2C, DELAY> {
     /// # Errors
-    pub fn new(i2c: I2C, address: Address, delay: DELAY) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
         let mut res = Self {
             i2c,
             address,
             delay,
         };
-        res.i2c
-            .write(res.address as u8, &[ALS_CONF, DEFAULT_SETTINGS])?;
+        res.i2c.write(res.address, &[ALS_CONF, DEFAULT_SETTINGS])?;
         res.delay.delay_ms(4);
         Ok(res)
     }
@@ -35,8 +28,7 @@ impl<I2C: I2c, DELAY: DelayUs> P3<I2C, DELAY> {
     /// # Errors
     pub fn read(&mut self) -> Result<f64, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
-        self.i2c
-            .write_read(self.address as u8, &[REG_ALS], &mut data)?;
+        self.i2c.write_read(self.address, &[REG_ALS], &mut data)?;
         Ok(f64::from(u16::from_le_bytes(data)) + 0.0576)
     }
 }
@@ -52,7 +44,7 @@ mod test {
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::{Address, P3};
+    use crate::P3;
 
     #[test]
     pub fn new() {
@@ -60,7 +52,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P3::new(i2c, Address::X10, MockNoop {}).unwrap();
+        P3::new(i2c, 0x10, MockNoop {}).unwrap();
         i2c_clone.done();
     }
 
@@ -73,7 +65,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p3 = P3::new(i2c, Address::X10, MockNoop {}).unwrap();
+        let mut p3 = P3::new(i2c, 0x10, MockNoop {}).unwrap();
 
         assert_eq!(p3.read().unwrap(), 258.0576);
 

@@ -29,7 +29,7 @@ mod arm {
         },
     };
 
-    use p10::{Address, P10};
+    use p10::P10;
 
     use embedded_hal::delay::DelayUs;
     #[derive(Debug, PartialEq)]
@@ -85,7 +85,7 @@ mod arm {
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
         let mut delay_1 = MyDelay(delay);
-        let mut p10 = P10::new(i2c, Address::X10, delay_1).unwrap();
+        let mut p10 = P10::new(i2c, 0x10, delay_1).unwrap();
 
         let color = p10.read().unwrap();
 

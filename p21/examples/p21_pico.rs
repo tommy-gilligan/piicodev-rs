@@ -28,7 +28,7 @@ mod arm {
         },
     };
 
-    use p21::{Address, P21};
+    use p21::P21;
 
     #[entry]
     fn main() -> ! {
@@ -72,7 +72,7 @@ mod arm {
 
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         p21.set_double_press_duration(1000).unwrap();
         info!("{:?}", p21.firmware().unwrap());

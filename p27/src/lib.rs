@@ -3,15 +3,10 @@
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 
-#[derive(Copy, Clone)]
-pub enum Address {
-    X09 = 0x09,
-}
-
 pub struct P27<I2C, DELAY> {
     i2c: I2C,
     delay: DELAY,
-    address: Address,
+    address: u8,
 }
 
 const DEVICE_ID: u16 = 495;
@@ -40,7 +35,7 @@ const RFM69_REG_FRFLSB: u8 = 0x09;
 
 impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     /// # Errors
-    pub fn new(i2c: I2C, address: Address, delay: DELAY) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
         let mut res = Self {
             i2c,
             delay,
@@ -49,13 +44,11 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
 
         res.set_led(true)?;
 
-        res.i2c
-            .write(res.address as u8, &[REG_RFM69_NODE_ID, 0, 0])?;
+        res.i2c.write(res.address, &[REG_RFM69_NODE_ID, 0, 0])?;
         while !(res.transceiver_ready()?) {
             res.delay.delay_ms(10);
         }
-        res.i2c
-            .write(res.address as u8, &[REG_RFM69_NETWORK_ID, 0])?;
+        res.i2c.write(res.address, &[REG_RFM69_NETWORK_ID, 0])?;
 
         res.set_radio_frequency(922)?;
         res.set_speed(2)?;
@@ -70,15 +63,14 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         self.set_destination_radio_address(address)?;
         self.delay.delay_ms(8);
 
-        self.i2c
-            .write(self.address as u8, &[REG_PAYLOAD_LENGTH, 3])?;
+        self.i2c.write(self.address, &[REG_PAYLOAD_LENGTH, 3])?;
         self.delay.delay_ms(5);
 
         self.i2c
-            .write(self.address as u8, &[REG_PAYLOAD, 0x42, 0x4f, 0x42])?;
+            .write(self.address, &[REG_PAYLOAD, 0x42, 0x4f, 0x42])?;
 
         self.delay.delay_ms(5);
-        self.i2c.write(self.address as u8, &[REG_PAYLOAD_GO, 1])?;
+        self.i2c.write(self.address, &[REG_PAYLOAD_GO, 1])?;
         Ok(())
     }
 
@@ -86,7 +78,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn payload_new(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address as u8, &[REG_PAYLOAD_NEW], &mut data)?;
+            .write_read(self.address, &[REG_PAYLOAD_NEW], &mut data)?;
         Ok(data[0] == 1)
     }
 
@@ -94,33 +86,30 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn get_destination_radio_address(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c
-            .write_read(self.address as u8, &[REG_RFM69_TO_NODE_ID], &mut data)?;
+            .write_read(self.address, &[REG_RFM69_TO_NODE_ID], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 
     /// # Errors
     pub fn set_destination_radio_address(&mut self, value: u8) -> Result<(), I2C::Error> {
         self.i2c
-            .write(self.address as u8, &[REG_RFM69_TO_NODE_ID, value])?;
+            .write(self.address, &[REG_RFM69_TO_NODE_ID, value])?;
         Ok(())
     }
 
     /// # Errors
     pub fn get_rfm69_register(&mut self, register: u8) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0];
+        self.i2c.write(self.address, &[REG_RFM69_REG, register])?;
         self.i2c
-            .write(self.address as u8, &[REG_RFM69_REG, register])?;
-        self.i2c
-            .write_read(self.address as u8, &[REG_RFM69_VALUE], &mut data)?;
+            .write_read(self.address, &[REG_RFM69_VALUE], &mut data)?;
         Ok(data[0])
     }
 
     /// # Errors
     pub fn set_rfm69_register(&mut self, register: u8, value: u8) -> Result<(), I2C::Error> {
-        self.i2c
-            .write(self.address as u8, &[REG_RFM69_REG, register])?;
-        self.i2c
-            .write(self.address as u8, &[REG_RFM69_VALUE, value])?;
+        self.i2c.write(self.address, &[REG_RFM69_REG, register])?;
+        self.i2c.write(self.address, &[REG_RFM69_VALUE, value])?;
         Ok(())
     }
 
@@ -138,7 +127,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
 
     /// # Errors
     pub fn rfm69_reset(&mut self) -> Result<(), I2C::Error> {
-        self.i2c.write(self.address as u8, &[REG_RFM69_RESET, 1])?;
+        self.i2c.write(self.address, &[REG_RFM69_RESET, 1])?;
         self.delay.delay_ms(10);
         Ok(())
     }
@@ -236,7 +225,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
             self.delay.delay_ms(10);
         }
         self.i2c
-            .write_read(self.address as u8, &[REG_TX_POWER], &mut data)?;
+            .write_read(self.address, &[REG_TX_POWER], &mut data)?;
         Ok(data[0] as i8)
     }
 
@@ -245,8 +234,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        self.i2c
-            .write(self.address as u8, &[REG_TX_POWER, value as u8])?;
+        self.i2c.write(self.address, &[REG_TX_POWER, value as u8])?;
         Ok(())
     }
 
@@ -254,7 +242,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn group(&mut self) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address as u8, &[REG_RFM69_NETWORK_ID], &mut data)?;
+            .write_read(self.address, &[REG_RFM69_NETWORK_ID], &mut data)?;
         Ok(data[0])
     }
 
@@ -262,7 +250,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn radio_address(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c
-            .write_read(self.address as u8, &[REG_RFM69_NODE_ID], &mut data)?;
+            .write_read(self.address, &[REG_RFM69_NODE_ID], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 
@@ -270,7 +258,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn get_on(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address as u8, &[REG_RFM69_RADIO_STATE], &mut data)?;
+            .write_read(self.address, &[REG_RFM69_RADIO_STATE], &mut data)?;
         self.delay.delay_ms(5);
         Ok(data[0] == 1)
     }
@@ -278,8 +266,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     /// # Errors
     pub fn set_on(&mut self) -> Result<(), I2C::Error> {
         self.delay.delay_ms(5);
-        self.i2c
-            .write(self.address as u8, &[REG_RFM69_RADIO_STATE, 1])?;
+        self.i2c.write(self.address, &[REG_RFM69_RADIO_STATE, 1])?;
         self.delay.delay_ms(5);
         Ok(())
     }
@@ -288,7 +275,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn get_off(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address as u8, &[REG_RFM69_RADIO_STATE], &mut data)?;
+            .write_read(self.address, &[REG_RFM69_RADIO_STATE], &mut data)?;
         self.delay.delay_ms(5);
         Ok(data[0] == 0)
     }
@@ -296,8 +283,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     /// # Errors
     pub fn set_off(&mut self) -> Result<(), I2C::Error> {
         self.delay.delay_ms(5);
-        self.i2c
-            .write(self.address as u8, &[REG_RFM69_RADIO_STATE, 0])?;
+        self.i2c.write(self.address, &[REG_RFM69_RADIO_STATE, 0])?;
         self.delay.delay_ms(5);
         Ok(())
     }
@@ -305,17 +291,16 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     /// # Errors
     pub fn get_led(&mut self) -> Result<bool, I2C::Error> {
         let mut maj: [u8; 1] = [0];
-        self.i2c
-            .write_read(self.address as u8, &[REG_LED], &mut maj)?;
+        self.i2c.write_read(self.address, &[REG_LED], &mut maj)?;
         Ok(maj[0] == 1)
     }
 
     /// # Errors
     pub fn set_led(&mut self, on: bool) -> Result<(), I2C::Error> {
         if on {
-            self.i2c.write(self.address as u8, &[REG_LED, 1])?;
+            self.i2c.write(self.address, &[REG_LED, 1])?;
         } else {
-            self.i2c.write(self.address as u8, &[REG_LED, 0])?;
+            self.i2c.write(self.address, &[REG_LED, 0])?;
         }
         Ok(())
     }
@@ -323,8 +308,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     /// # Errors
     pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut maj: [u8; 2] = [0, 0];
-        self.i2c
-            .write_read(self.address as u8, &[REG_WHOAMI], &mut maj)?;
+        self.i2c.write_read(self.address, &[REG_WHOAMI], &mut maj)?;
         Ok(u16::from_be_bytes(maj))
     }
 
@@ -332,10 +316,10 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn firmware(&mut self) -> Result<(u8, u8), I2C::Error> {
         let mut maj: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address as u8, &[REG_FIRM_MAJ], &mut maj)?;
+            .write_read(self.address, &[REG_FIRM_MAJ], &mut maj)?;
         let mut min: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address as u8, &[REG_FIRM_MIN], &mut min)?;
+            .write_read(self.address, &[REG_FIRM_MIN], &mut min)?;
         Ok((maj[0], min[0]))
     }
 
@@ -343,7 +327,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn transceiver_ready(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address as u8, &[REG_TRANSCEIVER_READY], &mut data)?;
+            .write_read(self.address, &[REG_TRANSCEIVER_READY], &mut data)?;
         Ok(data[0] == 1)
     }
 }
@@ -359,7 +343,7 @@ mod test {
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::{Address, P27};
+    use crate::P27;
 
     #[test]
     pub fn new() {
@@ -387,7 +371,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P27::new(i2c, Address::X09, MockNoop {}).unwrap();
+        P27::new(i2c, 0x09, MockNoop {}).unwrap();
 
         i2c_clone.done();
     }
@@ -409,7 +393,7 @@ mod test {
         let mut p27 = P27 {
             i2c,
             delay: MockNoop {},
-            address: Address::X09,
+            address: 0x09,
         };
         p27.set_radio_frequency(918).unwrap();
 
@@ -433,7 +417,7 @@ mod test {
         let mut p27 = P27 {
             i2c,
             delay: MockNoop {},
-            address: Address::X09,
+            address: 0x09,
         };
         p27.get_radio_frequency().unwrap();
 
@@ -454,7 +438,7 @@ mod test {
         let mut p27 = P27 {
             i2c,
             delay: MockNoop {},
-            address: Address::X09,
+            address: 0x09,
         };
         p27.set_speed(1).unwrap();
 
@@ -475,7 +459,7 @@ mod test {
         let mut p27 = P27 {
             i2c,
             delay: MockNoop {},
-            address: Address::X09,
+            address: 0x09,
         };
         assert_eq!(p27.get_speed(), Ok(3));
 
@@ -494,7 +478,7 @@ mod test {
         let mut p27 = P27 {
             i2c,
             delay: MockNoop {},
-            address: Address::X09,
+            address: 0x09,
         };
         p27.set_tx_power(3).unwrap();
 
@@ -513,7 +497,7 @@ mod test {
         let mut p27 = P27 {
             i2c,
             delay: MockNoop {},
-            address: Address::X09,
+            address: 0x09,
         };
         assert_eq!(p27.get_tx_power(), Ok(-1));
 

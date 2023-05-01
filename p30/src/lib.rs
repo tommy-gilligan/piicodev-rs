@@ -3,14 +3,9 @@
 use embedded_hal::i2c::I2c;
 use measurements::Distance;
 
-#[derive(Copy, Clone)]
-pub enum Address {
-    X35 = 0x35,
-}
-
 pub struct P30<I2C> {
     i2c: I2C,
-    address: Address,
+    address: u8,
     millimeters_per_microsecond: f64,
 }
 
@@ -24,7 +19,7 @@ const REG_SELF_TEST: u8 = 0x09;
 const REG_WHOAMI: u8 = 0x01;
 
 impl<I2C: I2c> P30<I2C> {
-    pub fn new(i2c: I2C, address: Address) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
         let mut res = Self {
             i2c,
             address,
@@ -45,7 +40,7 @@ impl<I2C: I2c> P30<I2C> {
     pub fn new_sample_available(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_STATUS], &mut data)?;
+            .write_read(self.address, &[REG_STATUS], &mut data)?;
         if data[0] == 0 {
             Ok(false)
         } else {
@@ -55,29 +50,27 @@ impl<I2C: I2c> P30<I2C> {
 
     pub fn round_trip_time(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
-        self.i2c
-            .write_read(self.address as u8, &[REG_RAW], &mut data)?;
+        self.i2c.write_read(self.address, &[REG_RAW], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 
     pub fn get_period(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
-            .write_read(self.address as u8, &[REG_PERIOD], &mut data)?;
+            .write_read(self.address, &[REG_PERIOD], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 
     pub fn set_period(&mut self, period: u16) -> Result<(), I2C::Error> {
         let bytes: [u8; 2] = u16::to_be_bytes(period);
         self.i2c
-            .write(self.address as u8, &[REG_PERIOD | 0x80, bytes[0], bytes[1]])?;
+            .write(self.address, &[REG_PERIOD | 0x80, bytes[0], bytes[1]])?;
         Ok(())
     }
 
     pub fn get_led(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
-        self.i2c
-            .write_read(self.address as u8, &[REG_LED], &mut data)?;
+        self.i2c.write_read(self.address, &[REG_LED], &mut data)?;
         if data[0] == 0 {
             Ok(false)
         } else {
@@ -87,9 +80,9 @@ impl<I2C: I2c> P30<I2C> {
 
     pub fn set_led(&mut self, on: bool) -> Result<(), I2C::Error> {
         if on {
-            self.i2c.write(self.address as u8, &[REG_LED | 0x80, 1])?;
+            self.i2c.write(self.address, &[REG_LED | 0x80, 1])?;
         } else {
-            self.i2c.write(self.address as u8, &[REG_LED | 0x80, 0])?;
+            self.i2c.write(self.address, &[REG_LED | 0x80, 0])?;
         }
         Ok(())
     }
@@ -97,24 +90,24 @@ impl<I2C: I2c> P30<I2C> {
     pub fn firmware(&mut self) -> Result<(u8, u8), I2C::Error> {
         let mut maj_data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_FIRM_MAJ], &mut maj_data)?;
+            .write_read(self.address, &[REG_FIRM_MAJ], &mut maj_data)?;
         let mut min_data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_FIRM_MIN], &mut min_data)?;
+            .write_read(self.address, &[REG_FIRM_MIN], &mut min_data)?;
         Ok((maj_data[0], min_data[0]))
     }
 
     pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
-            .write_read(self.address as u8, &[REG_WHOAMI], &mut data)?;
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 
     pub fn self_test(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_SELF_TEST], &mut data)?;
+            .write_read(self.address, &[REG_SELF_TEST], &mut data)?;
         if data[0] == 0 {
             Ok(false)
         } else {
@@ -134,7 +127,7 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use measurements::Distance;
 
-    use crate::{Address, P30};
+    use crate::P30;
 
     #[test]
     pub fn set_led_on() {
@@ -144,7 +137,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -160,7 +153,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -176,7 +169,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -192,7 +185,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -212,7 +205,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -231,7 +224,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -247,7 +240,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -263,7 +256,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -279,7 +272,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -295,7 +288,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -315,7 +308,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -331,7 +324,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -351,7 +344,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 
@@ -368,7 +361,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let p30 = P30::new(i2c, Address::X35).unwrap();
+        let p30 = P30::new(i2c, 0x35).unwrap();
 
         assert_eq!(p30.millimeters_per_microsecond, 0.343f64);
         i2c_clone.done();
@@ -380,7 +373,7 @@ mod test {
         let mut i2c_clone = i2c.clone();
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
         p30.millimeters_per_microsecond = 0.890f64;
@@ -400,7 +393,7 @@ mod test {
 
         let mut p30 = P30 {
             i2c,
-            address: Address::X35,
+            address: 0x35,
             millimeters_per_microsecond: 3.2f64,
         };
 

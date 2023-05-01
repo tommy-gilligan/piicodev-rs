@@ -28,7 +28,7 @@ mod arm {
         },
     };
 
-    use p18::{Address, P18};
+    use p18::P18;
 
     #[entry]
     fn main() -> ! {
@@ -73,7 +73,7 @@ mod arm {
         info!("light off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
-        let mut p18 = P18::new(i2c, Address::X5C);
+        let mut p18 = P18::new(i2c, 0x5C);
 
         loop {
             p18.tone(540u32.Hz(), 1000u32.millis()).unwrap();

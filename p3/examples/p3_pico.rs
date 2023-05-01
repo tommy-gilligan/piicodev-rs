@@ -28,7 +28,7 @@ mod arm {
         },
     };
 
-    use p3::{Address, P3};
+    use p3::P3;
 
     use embedded_hal::delay::DelayUs;
     #[derive(Debug, PartialEq)]
@@ -84,7 +84,7 @@ mod arm {
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
         let mut delay_1 = MyDelay(delay);
-        let mut p3 = P3::new(i2c, Address::X10, delay_1).unwrap();
+        let mut p3 = P3::new(i2c, 0x10, delay_1).unwrap();
 
         info!("{:?}", p3.read().unwrap());
         info!("light on!");

@@ -1,29 +1,9 @@
 #![no_std]
 use embedded_hal::i2c::I2c;
 
-#[derive(Copy, Clone)]
-pub enum Address {
-    X09 = 0x09,
-    X0A = 0x0A,
-    X0B = 0x0B,
-    X0C = 0x0C,
-    X0D = 0x0D,
-    X0E = 0x0E,
-    X0F = 0x0F,
-    X10 = 0x10,
-    X11 = 0x11,
-    X12 = 0x12,
-    X13 = 0x13,
-    X14 = 0x14,
-    X15 = 0x15,
-    X16 = 0x16,
-    X17 = 0x17,
-    X42 = 0x42,
-}
-
 pub struct P21<I2C> {
     i2c: I2C,
-    address: Address,
+    address: u8,
 }
 
 const REG_WHOAMI: u8 = 0x01;
@@ -39,7 +19,7 @@ const REG_EMA_SMOOTHING_FACTOR: u8 = 0x22;
 const REG_EMA_PERIOD: u8 = 0x23;
 
 impl<I2C: I2c> P21<I2C> {
-    pub const fn new(i2c: I2C, address: Address) -> Self {
+    pub const fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 
@@ -47,7 +27,7 @@ impl<I2C: I2c> P21<I2C> {
     pub fn is_pressed(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address as u8, &[REG_IS_PRESSED], &mut data)?;
+            .write_read(self.address, &[REG_IS_PRESSED], &mut data)?;
         if data[0] == 1 {
             Ok(false)
         } else {
@@ -58,8 +38,7 @@ impl<I2C: I2c> P21<I2C> {
     /// # Errors
     pub fn get_led(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0];
-        self.i2c
-            .write_read(self.address as u8, &[REG_LED], &mut data)?;
+        self.i2c.write_read(self.address, &[REG_LED], &mut data)?;
         if data[0] == 0 {
             Ok(false)
         } else {
@@ -71,10 +50,10 @@ impl<I2C: I2c> P21<I2C> {
     pub fn set_led(&mut self, on: bool) -> Result<(), I2C::Error> {
         if on {
             self.i2c
-                .write(self.address as u8, &[REG_LED | 0b1000_0000, 0x01])?;
+                .write(self.address, &[REG_LED | 0b1000_0000, 0x01])?;
         } else {
             self.i2c
-                .write(self.address as u8, &[REG_LED | 0b1000_0000, 0x00])?;
+                .write(self.address, &[REG_LED | 0b1000_0000, 0x00])?;
         }
         Ok(())
     }
@@ -83,7 +62,7 @@ impl<I2C: I2c> P21<I2C> {
     pub fn was_double_pressed(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_DOUBLE_PRESS_DETECTED], &mut data)?;
+            .write_read(self.address, &[REG_DOUBLE_PRESS_DETECTED], &mut data)?;
         if data[0] == 1 {
             Ok(true)
         } else {
@@ -95,7 +74,7 @@ impl<I2C: I2c> P21<I2C> {
     pub fn was_pressed(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_WAS_PRESSED], &mut data)?;
+            .write_read(self.address, &[REG_WAS_PRESSED], &mut data)?;
         if data[0] == 0 {
             Ok(false)
         } else {
@@ -107,14 +86,14 @@ impl<I2C: I2c> P21<I2C> {
     pub fn get_ema_smoothing_factor(&mut self) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_EMA_SMOOTHING_FACTOR], &mut data)?;
+            .write_read(self.address, &[REG_EMA_SMOOTHING_FACTOR], &mut data)?;
         Ok(data[0])
     }
 
     /// # Errors
     pub fn set_ema_smoothing_factor(&mut self, smoothing_factor: u8) -> Result<(), I2C::Error> {
         self.i2c.write(
-            self.address as u8,
+            self.address,
             &[REG_EMA_SMOOTHING_FACTOR | 0b1000_0000, smoothing_factor],
         )?;
         Ok(())
@@ -124,14 +103,14 @@ impl<I2C: I2c> P21<I2C> {
     pub fn get_ema_period(&mut self) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_EMA_PERIOD], &mut data)?;
+            .write_read(self.address, &[REG_EMA_PERIOD], &mut data)?;
         Ok(data[0])
     }
 
     /// # Errors
     pub fn set_ema_period(&mut self, period: u8) -> Result<(), I2C::Error> {
         self.i2c
-            .write(self.address as u8, &[REG_EMA_PERIOD | 0b1000_0000, period])?;
+            .write(self.address, &[REG_EMA_PERIOD | 0b1000_0000, period])?;
         Ok(())
     }
 
@@ -139,7 +118,7 @@ impl<I2C: I2c> P21<I2C> {
     pub fn get_double_press_duration(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
-            .write_read(self.address as u8, &[REG_DOUBLE_PRESS_DURATION], &mut data)?;
+            .write_read(self.address, &[REG_DOUBLE_PRESS_DURATION], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 
@@ -150,7 +129,7 @@ impl<I2C: I2c> P21<I2C> {
     ) -> Result<(), I2C::Error> {
         let bytes: [u8; 2] = u16::to_be_bytes(double_press_duration);
         self.i2c.write(
-            self.address as u8,
+            self.address,
             &[REG_DOUBLE_PRESS_DURATION | 0b1000_0000, bytes[0], bytes[1]],
         )?;
         Ok(())
@@ -160,10 +139,10 @@ impl<I2C: I2c> P21<I2C> {
     pub fn firmware(&mut self) -> Result<(u8, u8), I2C::Error> {
         let mut major_data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_FIRM_MAJ], &mut major_data)?;
+            .write_read(self.address, &[REG_FIRM_MAJ], &mut major_data)?;
         let mut minor_data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address as u8, &[REG_FIRM_MIN], &mut minor_data)?;
+            .write_read(self.address, &[REG_FIRM_MIN], &mut minor_data)?;
         Ok((major_data[0], minor_data[0]))
     }
 
@@ -171,7 +150,7 @@ impl<I2C: I2c> P21<I2C> {
     pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
-            .write_read(self.address as u8, &[REG_WHOAMI], &mut data)?;
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 
@@ -179,7 +158,7 @@ impl<I2C: I2c> P21<I2C> {
     pub fn press_count(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
-            .write_read(self.address as u8, &[REG_PRESS_COUNT], &mut data)?;
+            .write_read(self.address, &[REG_PRESS_COUNT], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 }
@@ -194,7 +173,7 @@ mod test {
     extern crate embedded_hal_mock;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::{Address, P21};
+    use crate::P21;
 
     #[test]
     pub fn read_pressed() {
@@ -202,7 +181,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.is_pressed(), Ok(true));
         i2c_clone.done();
@@ -214,7 +193,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.is_pressed(), Ok(false));
         i2c_clone.done();
@@ -226,7 +205,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.get_led(), Ok(false));
         i2c_clone.done();
@@ -238,7 +217,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.get_led(), Ok(true));
         i2c_clone.done();
@@ -250,7 +229,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         p21.set_led(true).unwrap();
         i2c_clone.done();
@@ -262,7 +241,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         p21.set_led(false).unwrap();
         i2c_clone.done();
@@ -277,7 +256,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.firmware(), Ok((0x31, 0x52)));
         i2c_clone.done();
@@ -293,7 +272,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.whoami(), Ok(0x0199));
         i2c_clone.done();
@@ -309,7 +288,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.press_count(), Ok(274));
         i2c_clone.done();
@@ -325,7 +304,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.get_double_press_duration(), Ok(600));
         i2c_clone.done();
@@ -337,7 +316,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         p21.set_double_press_duration(144).unwrap();
         i2c_clone.done();
@@ -349,7 +328,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.was_double_pressed(), Ok(true));
         i2c_clone.done();
@@ -361,7 +340,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.was_double_pressed(), Ok(false));
         i2c_clone.done();
@@ -373,7 +352,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.get_ema_smoothing_factor(), Ok(153));
         i2c_clone.done();
@@ -385,7 +364,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         p21.set_ema_smoothing_factor(102).unwrap();
         i2c_clone.done();
@@ -397,7 +376,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.get_ema_period(), Ok(170));
         i2c_clone.done();
@@ -409,7 +388,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         p21.set_ema_period(119).unwrap();
         i2c_clone.done();
@@ -421,7 +400,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.was_pressed(), Ok(true));
         i2c_clone.done();
@@ -433,7 +412,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, Address::X10);
+        let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.was_pressed(), Ok(false));
         i2c_clone.done();

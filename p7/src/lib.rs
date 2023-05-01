@@ -4,14 +4,9 @@ use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 use measurements::Distance;
 
-#[derive(Copy, Clone)]
-pub enum Address {
-    X29 = 0x29,
-}
-
 pub struct P7<I2C, DELAY> {
     i2c: I2C,
-    address: Address,
+    address: u8,
     delay: DELAY,
 }
 
@@ -112,7 +107,7 @@ const VL51L1X_DEFAULT_CONFIGURATION: [u8; 93] = [
 
 impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
     /// # Errors
-    pub fn new(i2c: I2C, address: Address, delay: DELAY) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
         let mut res = Self {
             i2c,
             address,
@@ -120,26 +115,24 @@ impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
         };
         res.reset()?;
         res.delay.delay_ms(1);
-        res.i2c
-            .write(res.address as u8, &VL51L1X_DEFAULT_CONFIGURATION)?;
+        res.i2c.write(res.address, &VL51L1X_DEFAULT_CONFIGURATION)?;
         res.delay.delay_ms(100);
         // the API triggers this change in VL53L1_init_and_start_range() once a
         // measurement is started; assumes MM1 and MM2 are disabled
         let mut data: [u8; 2] = [0; 2];
-        res.i2c
-            .write_read(res.address as u8, &[0x00, 0x22], &mut data)?;
+        res.i2c.write_read(res.address, &[0x00, 0x22], &mut data)?;
         data = u16::to_le_bytes(u16::from_le_bytes(data) * 4);
         res.i2c
-            .write(res.address as u8, &[0x00, 0x1E, data[0], data[1]])?;
+            .write(res.address, &[0x00, 0x1E, data[0], data[1]])?;
         res.delay.delay_ms(200);
         Ok(res)
     }
 
     /// # Errors
     pub fn reset(&mut self) -> Result<(), I2C::Error> {
-        self.i2c.write(self.address as u8, &[0x00, 0x00, 0x00])?;
+        self.i2c.write(self.address, &[0x00, 0x00, 0x00])?;
         self.delay.delay_ms(100);
-        self.i2c.write(self.address as u8, &[0x00, 0x00, 0x01])?;
+        self.i2c.write(self.address, &[0x00, 0x00, 0x01])?;
         Ok(())
     }
 
@@ -147,7 +140,7 @@ impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
     pub fn read(&mut self) -> Result<Distance, I2C::Error> {
         let mut data: [u8; 17] = [0; 17];
         self.i2c
-            .write_read(self.address as u8, &[0x00, 0x89], &mut data)?;
+            .write_read(self.address, &[0x00, 0x89], &mut data)?;
         Ok(Distance::from_millimetres(
             u16::from_be_bytes([data[13], data[14]]).into(),
         ))
@@ -165,7 +158,7 @@ mod test {
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::{Address, P7};
+    use crate::P7;
     use measurements::Distance;
 
     #[test]
@@ -189,7 +182,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P7::new(i2c, Address::X29, MockNoop {}).unwrap();
+        P7::new(i2c, 0x29, MockNoop {}).unwrap();
         i2c_clone.done();
     }
 
@@ -204,7 +197,7 @@ mod test {
 
         let mut p7 = P7 {
             i2c,
-            address: Address::X29,
+            address: 0x29,
             delay: MockNoop {},
         };
         p7.reset().unwrap();
@@ -227,7 +220,7 @@ mod test {
 
         let mut p7 = P7 {
             i2c,
-            address: Address::X29,
+            address: 0x29,
             delay: MockNoop {},
         };
         assert_eq!(p7.read().unwrap(), Distance::from_millimetres(1000.0));

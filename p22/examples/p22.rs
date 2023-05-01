@@ -5,12 +5,12 @@
 mod linux {
     extern crate std;
     use linux_embedded_hal::I2cdev;
-    use p22::{Address, P22};
+    use p22::P22;
     use std::println;
     #[no_mangle]
     pub extern "C" fn main() {
         let i2c = I2cdev::new("/dev/i2c-1").unwrap();
-        let mut p22 = P22::new(i2c, Address::X35);
+        let mut p22 = P22::new(i2c, 0x35);
 
         loop {
             println!("{:?}", p22.raw().unwrap());
@@ -48,7 +48,7 @@ mod pico {
         },
     };
 
-    use p22::{Address, P22};
+    use p22::P22;
 
     #[entry]
     fn main() -> ! {
@@ -93,7 +93,7 @@ mod pico {
         info!("light off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
-        let mut p22 = P22::new(i2c, Address::X10);
+        let mut p22 = P22::new(i2c, 0x10);
 
         loop {
             info!("{:?}", p22.raw().unwrap());

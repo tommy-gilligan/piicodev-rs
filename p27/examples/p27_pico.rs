@@ -38,7 +38,7 @@ mod arm {
         }
     }
 
-    use p27::{Address, P27};
+    use p27::P27;
 
     #[entry]
     fn main() -> ! {
@@ -84,7 +84,7 @@ mod arm {
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
         let mut delay_1 = MyDelay(delay);
-        let mut p27 = P27::new(i2c, Address::X1A, delay_1).unwrap();
+        let mut p27 = P27::new(i2c, 0x1A, delay_1).unwrap();
 
         info!("light on!");
         led_pin.set_high().unwrap();

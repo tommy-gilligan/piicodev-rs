@@ -28,7 +28,7 @@ mod arm {
         },
     };
 
-    use p1::{Address, P1};
+    use p1::P1;
 
     #[entry]
     fn main() -> ! {
@@ -73,7 +73,7 @@ mod arm {
         info!("light off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
-        let mut p1 = P1::new(i2c, Address::X48);
+        let mut p1 = P1::new(i2c, 0x48);
 
         loop {
             info!("{:?}", p1.read().unwrap().as_celsius());

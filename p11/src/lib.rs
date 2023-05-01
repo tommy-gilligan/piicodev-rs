@@ -4,14 +4,9 @@ use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 use measurements::{Pressure, Temperature};
 
-#[derive(Copy, Clone)]
-pub enum Address {
-    X76 = 0x76,
-}
-
 pub struct P11<I2C, DELAY> {
     i2c: I2C,
-    address: Address,
+    address: u8,
     delay: DELAY,
     coefficient_valid: bool,
     eeprom_coefficient: [u16; 7],
@@ -84,7 +79,7 @@ const fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
 
 impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
     /// # Errors
-    pub fn new(i2c: I2C, address: Address, delay: DELAY) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
         let mut res = Self {
             i2c,
             address,
@@ -92,7 +87,7 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
             coefficient_valid: false,
             eeprom_coefficient: [0; 7],
         };
-        res.i2c.write(res.address as u8, &[SOFT_RESET])?;
+        res.i2c.write(res.address, &[SOFT_RESET])?;
         res.delay.delay_ms(15);
         Ok(res)
     }
@@ -100,7 +95,7 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
     /// # Errors
     fn read_eeprom_coefficient(&mut self, reg: u8) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
-        self.i2c.write_read(self.address as u8, &[reg], &mut data)?;
+        self.i2c.write_read(self.address, &[reg], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 
@@ -129,12 +124,11 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
 
     /// # Errors
     fn conversion_read_adc(&mut self, cmd: u8, time: u32) -> Result<u32, I2C::Error> {
-        self.i2c.write(self.address as u8, &[cmd])?;
+        self.i2c.write(self.address, &[cmd])?;
         self.delay.delay_ms(time);
         let mut data: [u8; 3] = [0; 3];
         // cheat checking error for now
-        self.i2c
-            .write_read(self.address as u8, &[ADC_READ], &mut data)?;
+        self.i2c.write_read(self.address, &[ADC_READ], &mut data)?;
         Ok(u32::from_be_bytes([0x00, data[0], data[1], data[2]]))
     }
 
@@ -220,7 +214,7 @@ mod test {
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::{set_resolution, Address, P11};
+    use crate::{set_resolution, P11};
 
     #[test]
     pub fn new() {
@@ -228,7 +222,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P11::new(i2c, Address::X76, MockNoop {}).unwrap();
+        P11::new(i2c, 0x76, MockNoop {}).unwrap();
         i2c_clone.done();
     }
 
@@ -247,7 +241,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p11 = P11::new(i2c, Address::X76, MockNoop {}).unwrap();
+        let mut p11 = P11::new(i2c, 0x76, MockNoop {}).unwrap();
 
         assert_eq!(
             p11.read_eeprom().unwrap(),
@@ -271,7 +265,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p11 = P11::new(i2c, Address::X76, MockNoop {}).unwrap();
+        let mut p11 = P11::new(i2c, 0x76, MockNoop {}).unwrap();
 
         assert_eq!(p11.conversion_read_adc(90, 0).unwrap(), 0x0008_0706);
         i2c_clone.done();

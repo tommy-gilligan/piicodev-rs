@@ -38,7 +38,7 @@ mod arm {
         },
     };
 
-    use p14::{Address, P14};
+    use p14::P14;
 
     #[entry]
     fn main() -> ! {
@@ -83,7 +83,7 @@ mod arm {
         info!("light off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
-        let mut p14 = P14::new(i2c, Address::X3C).unwrap();
+        let mut p14 = P14::new(i2c, 0x3C).unwrap();
         let fill = PrimitiveStyle::with_fill(BinaryColor::On);
         let thick_stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 3);
         Rectangle::new(Point::new(8, 8), Size::new(8, 8))

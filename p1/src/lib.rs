@@ -6,22 +6,6 @@
 use embedded_hal::i2c::I2c;
 use measurements::Temperature;
 
-/// P1 Hardware Addresses
-///
-/// The hardware address of the P1 should be set with the onboard ASW switches.  Please refer to
-/// the [schematic](https://piico.dev/p1).
-#[derive(Copy, Clone)]
-pub enum Address {
-    /// Hardware address `0x48` is active when the ASW is set as `1: On, 2: Off, 3: Off, 4: Off`
-    X48 = 0x48,
-    /// Hardware address `0x49` is active when the ASW is set as `1: Off, 2: On, 3: Off, 4: Off`
-    X49 = 0x49,
-    /// Hardware address `0x4A` is active when the ASW is set as `1: Off, 2: Off, 3: On, 4: Off`
-    X4A = 0x4A,
-    /// Hardware address `0x4B` is active when the ASW is set as `1: Off, 2: Off, 3: Off, 4: On`
-    X4B = 0x4B,
-}
-
 /// The P1 driver
 ///
 /// Typical usage:
@@ -31,7 +15,7 @@ pub enum Address {
 ///
 pub struct P1<I2C> {
     i2c: I2C,
-    address: Address,
+    address: u8,
 }
 
 const REG_TEMPC: u8 = 0x0;
@@ -41,7 +25,7 @@ impl<I2C: I2c> P1<I2C> {
     ///
     /// The [`I2c`] argument should be acquired from the target platform's HAL.
     /// The address should match the hardware address set by the P1's onboard ASW switches.
-    pub const fn new(i2c: I2C, address: Address) -> Self {
+    pub const fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 
@@ -52,8 +36,7 @@ impl<I2C: I2c> P1<I2C> {
     /// the errors
     pub fn read(&mut self) -> Result<Temperature, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
-        self.i2c
-            .write_read(self.address as u8, &[REG_TEMPC], &mut data)?;
+        self.i2c.write_read(self.address, &[REG_TEMPC], &mut data)?;
         let temp_data_raw = u16::from_be_bytes(data);
         if temp_data_raw >= 0x8000 {
             Ok(Temperature::from_celsius(
@@ -77,7 +60,7 @@ mod test {
     extern crate embedded_hal_mock;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::{Address, P1};
+    use crate::P1;
     use measurements::Temperature;
 
     #[test]
@@ -86,7 +69,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p1 = P1::new(i2c, Address::X48);
+        let mut p1 = P1::new(i2c, 0x48);
 
         assert_eq!(p1.read(), Ok(Temperature::from_celsius(23.046_875)));
         i2c_clone.done();
@@ -98,7 +81,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p1 = P1::new(i2c, Address::X48);
+        let mut p1 = P1::new(i2c, 0x48);
 
         assert_eq!(p1.read(), Ok(Temperature::from_celsius(-23.046_875)));
         i2c_clone.done();

@@ -28,7 +28,7 @@ mod arm {
         },
     };
 
-    use p13::{Address, P13};
+    use p13::P13;
     use smart_leds_trait::RGB;
 
     #[entry]
@@ -74,7 +74,7 @@ mod arm {
         info!("light off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
-        let mut p13 = P13::new(i2c, Address::X0B);
+        let mut p13 = P13::new(i2c, 0x0B);
 
         let data: [RGB<u8>; 3] = [
             RGB {

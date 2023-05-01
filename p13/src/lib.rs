@@ -3,21 +3,13 @@
 use embedded_hal::i2c::I2c;
 use smart_leds_trait::SmartLedsWrite;
 
-#[derive(Copy, Clone)]
-pub enum Address {
-    X08 = 0x08,
-    X09 = 0x09,
-    X0A = 0x0A,
-    X0B = 0x0B,
-}
-
 pub struct P13<I2C> {
     i2c: I2C,
-    address: Address,
+    address: u8,
 }
 
 impl<I2C: I2c> P13<I2C> {
-    pub const fn new(i2c: I2C, address: Address) -> Self {
+    pub const fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }
@@ -42,7 +34,7 @@ impl<I2C: I2c> SmartLedsWrite for P13<I2C> {
         {
             data[i + 1] = v;
         }
-        self.i2c.write(self.address as u8, &data).unwrap();
+        self.i2c.write(self.address, &data).unwrap();
 
         Ok(())
     }
@@ -59,7 +51,7 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use smart_leds_trait::{SmartLedsWrite, RGB};
 
-    use crate::{Address, P13};
+    use crate::P13;
 
     #[test]
     pub fn write() {
@@ -70,7 +62,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p13 = P13::new(i2c, Address::X0A);
+        let mut p13 = P13::new(i2c, 0x0A);
 
         let data: [RGB<u8>; 3] = [
             RGB {

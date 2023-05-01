@@ -28,7 +28,7 @@ mod arm {
         },
     };
 
-    use p7::{Address, P7};
+    use p7::P7;
 
     use embedded_hal::delay::DelayUs;
     #[derive(Debug, PartialEq)]
@@ -84,7 +84,7 @@ mod arm {
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
         let mut delay_1 = MyDelay(delay);
-        let mut p7 = P7::new(i2c, Address::X29, delay_1).unwrap();
+        let mut p7 = P7::new(i2c, 0x29, delay_1).unwrap();
 
         info!("{:?}", p7.read().unwrap().as_millimetres());
         info!("light on!");

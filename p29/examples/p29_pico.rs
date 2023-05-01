@@ -28,7 +28,7 @@ mod arm {
         },
     };
 
-    use p29::{Address, P29};
+    use p29::P29;
 
     use embedded_hal::delay::DelayUs;
     #[derive(Debug, PartialEq)]
@@ -84,7 +84,7 @@ mod arm {
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
         let mut delay_1 = MyDelay(delay);
-        let mut p29 = P29::new(i2c, Address::X44, delay_1).unwrap();
+        let mut p29 = P29::new(i2c, 0x44, delay_1).unwrap();
 
         p29.set_pwm(0, 0, 491).unwrap();
         info!("light on!");
