@@ -46,8 +46,8 @@ fn find_main_heading(node: &markdown::mdast::Node) -> Option<&Heading> {
         })
 }
 
-fn find_package(packages: &[Package], id: PackageId) -> Option<&Package> {
-    packages.iter().find(|package| package.id == id)
+fn find_package<'a>(packages: &'a [Package], id: &'a PackageId) -> Option<&'a Package> {
+    packages.iter().find(|package| &(package.id) == id)
 }
 
 fn main() {
@@ -72,7 +72,7 @@ fn main() {
 
             let mut links: HashMap<String, Vec<camino::Utf8PathBuf>> = HashMap::new();
             for member_package_id in workspace_members {
-                let package = find_package(&metadata.packages, member_package_id).unwrap();
+                let package = find_package(&metadata.packages, &member_package_id).unwrap();
                 let readme_path = package.readme().unwrap();
                 let mut file = File::open(readme_path.clone()).unwrap();
                 let mut contents = String::new();
@@ -80,26 +80,29 @@ fn main() {
                 let mdast = markdown::to_mdast(&contents, &markdown::ParseOptions::gfm()).unwrap();
 
                 for required_link in REQUIRED_LINKS {
-                    if find_definition(&mdast, required_link).is_none() {
-                        panic!("{} definition not found in {}", required_link, readme_path);
-                    }
+                    assert!(
+                        find_definition(&mdast, required_link).is_some(),
+                        "{required_link} definition not found in {readme_path}"
+                    );
                 }
                 for unique_link in UNIQUE_LINKS {
                     if let Some(definition) = find_definition(&mdast, unique_link) {
                         links
                             .entry(definition.url.clone())
                             .and_modify(|v| v.push(readme_path.clone()))
-                            .or_insert(vec![readme_path.clone()]);
+                            .or_insert_with(|| vec![readme_path.clone()]);
                     }
                 }
-                for (url, readme_paths) in links.iter() {
-                    if readme_paths.len() > 1 {
-                        panic!("duplicate url {} in {:?}", url, readme_paths);
-                    }
+                for (url, readme_paths) in &links {
+                    assert!(
+                        readme_paths.len() <= 1,
+                        "duplicate url {url} in {readme_paths:?}"
+                    );
                 }
-                if find_main_heading(&mdast).is_none() {
-                    panic!("no heading in {:?}", readme_path);
-                }
+                assert!(
+                    find_main_heading(&mdast).is_some(),
+                    "no heading in {readme_path:?}"
+                );
             }
         }
         _ => unreachable!("clap should ensure we don't get here"),

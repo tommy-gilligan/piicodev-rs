@@ -142,7 +142,6 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
 
         let speed = match (msb, lsb) {
             (0x0D, 0x05) => 1,
-            (0x01, 0x16) => 2,
             (0x00, 0x6B) => 3,
             _ => 2,
         };
@@ -154,7 +153,6 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn set_speed(&mut self, speed: u8) -> Result<(), I2C::Error> {
         let (msb, lsb) = match speed {
             1 => (0x0D, 0x05),
-            2 => (0x01, 0x16),
             3 => (0x00, 0x6B),
             _ => (0x01, 0x16),
         };
@@ -181,12 +179,10 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         self.delay.delay_ms(5);
 
         let frequency = match (msb, mid, lsb) {
-            (0xE4, 0xC0, 0x00) => 915,
             (0xE5, 0x80, 0x00) => 918,
             (0xE6, 0xC0, 0x00) => 922,
             (0xE7, 0x40, 0x00) => 925,
             (0xE8, 0x00, 0x00) => 928,
-            // should be an error
             _ => 915,
         };
 
@@ -199,12 +195,10 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
             self.delay.delay_ms(10);
         }
         let (msb, mid, lsb) = match frequency {
-            915 => (0xE4, 0xC0, 0x00),
             918 => (0xE5, 0x80, 0x00),
             922 => (0xE6, 0xC0, 0x00),
             925 => (0xE7, 0x40, 0x00),
             928 => (0xE8, 0x00, 0x00),
-            // should be an error
             _ => (0xE4, 0xC0, 0x00),
         };
 

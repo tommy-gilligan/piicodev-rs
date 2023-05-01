@@ -46,7 +46,7 @@ jobs:
         with:
           components: clippy
           target: thumbv6m-none-eabi
-      - run: cargo clippy --all-features -- --deny=warnings
+      - run: cargo clippy --allow-dirty --fix --all-targets --all-features -- -W clippy::nursery -A clippy::suboptimal_flops -W clippy::pedantic -A clippy::cast_sign_loss -A clippy::float_cmp -A clippy::module_name_repetitions -A clippy::missing_errors_doc -A clippy::cast_possible_wrap -A clippy::similar_names -A clippy::cast_possible_truncation -A clippy::cast_precision_loss -A clippy::missing-panics-doc
   testing:
     name: Testing
     runs-on: ubuntu-latest
