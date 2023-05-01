@@ -220,6 +220,8 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         }
         self.i2c
             .write_read(self.address, &[REG_TX_POWER], &mut data)?;
+
+        #[allow(clippy::cast_possible_wrap)]
         Ok(data[0] as i8)
     }
 

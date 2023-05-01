@@ -145,6 +145,7 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
         let adc_temperature: u32 = self.conversion_read_adc(cmd_temp, time_temp)?;
         let adc_pressure: u32 = self.conversion_read_adc(cmd_pressure, time_pressure)?;
         // Difference between actual and reference temperature = D2 - Tref
+        #[allow(clippy::cast_possible_wrap)]
         let d_t: i64 = i64::from(adc_temperature)
             - ((u64::from(self.eeprom_coefficient[MS5637_REFERENCE_TEMPERATURE_INDEX as usize])
                 * 0x100_u64) as i64);
@@ -193,7 +194,9 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
         sens -= sens2;
         //  Temperature compensated pressure = D1 * SENS - OFF
         let p = (((i64::from(adc_pressure) * sens) >> 21) - off) >> 15;
+        #[allow(clippy::cast_precision_loss)]
         let temperature = (temp - t2) as f64 / 100.0;
+        #[allow(clippy::cast_precision_loss)]
         let pressure = p as f64 / 100.0;
 
         Ok((

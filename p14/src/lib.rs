@@ -23,10 +23,10 @@ const SET_PRECHARGE: u8 = 0xD9;
 const SET_VCOM_DESEL: u8 = 0xDB;
 const SET_CHARGE_PUMP: u8 = 0x8D;
 
-const WIDTH: usize = 128;
-const HEIGHT: usize = 64;
-const PAGES: usize = HEIGHT / 8;
-const BUFFER_SIZE: usize = PAGES * WIDTH;
+const WIDTH: u8 = 128;
+const HEIGHT: u8 = 64;
+const PAGES: u8 = HEIGHT / 8;
+const BUFFER_SIZE: usize = PAGES as usize * WIDTH as usize;
 
 pub struct P14<I2C> {
     i2c: I2C,
@@ -50,7 +50,7 @@ impl<I2C: I2c> P14<I2C> {
             SET_DISP_START_LINE,
             SET_SEG_REMAP | 0x01,
             SET_MUX_RATIO,
-            (HEIGHT - 1) as u8,
+            (HEIGHT - 1),
             SET_COM_OUT_DIR | 0x08,
             SET_DISP_OFFSET,
             0x00,
@@ -79,14 +79,14 @@ impl<I2C: I2c> P14<I2C> {
 
     /// # Errors
     pub fn show(&mut self) -> Result<(), I2C::Error> {
-        let x0: usize = 0;
-        let x1: usize = WIDTH - 1;
+        let x0: u8 = 0;
+        let x1: u8 = WIDTH - 1;
         self.i2c.write(self.address, &[0x80, SET_COL_ADDR])?;
-        self.i2c.write(self.address, &[0x80, x0 as u8])?;
-        self.i2c.write(self.address, &[0x80, x1 as u8])?;
+        self.i2c.write(self.address, &[0x80, x0])?;
+        self.i2c.write(self.address, &[0x80, x1])?;
         self.i2c.write(self.address, &[0x80, SET_PAGE_ADDR])?;
         self.i2c.write(self.address, &[0x80, 0])?;
-        self.i2c.write(self.address, &[0x80, PAGES as u8 - 1])?;
+        self.i2c.write(self.address, &[0x80, PAGES - 1])?;
 
         let mut i2c_buffer: [u8; 1025] = [0x40; 1025];
         for (i, val) in self.framebuffer.iter().enumerate() {
@@ -108,9 +108,9 @@ impl<I2C: I2c> DrawTarget for P14<I2C> {
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         for Pixel(coord, color) in pixels {
-            if let Ok((x @ 0..=127i32, y @ 0..=63i32)) = coord.try_into() {
+            if let Ok((x @ 0..=127u32, y @ 0..=63u32)) = coord.try_into() {
                 let mask: u8 = 1 << (y % 8);
-                let index: usize = x as usize + (y as usize / 8) * WIDTH;
+                let index: usize = x as usize + (y as usize / 8) * (WIDTH as usize);
 
                 if color.is_on() {
                     self.framebuffer[index] |= mask;
