@@ -89,7 +89,7 @@ mod arm {
         info!("light on!");
         led_pin.set_high().unwrap();
         loop {
-            p27.send("hello world!".as_bytes());
+            p27.send(0, "message".as_bytes());
         }
     }
 }
