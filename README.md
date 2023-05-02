@@ -1,5 +1,9 @@
 # Unofficial Rust Drivers for PiicoDev
 
+Excellent MicroPython support from official packages.
+This here is: these are unofficial Rust drivers based around embedded-hal.
+These drivers can probably be used wherever embedded-hal can be used.
+
 ## Supported Devices
 
 - [Precision Temperature Sensor](./p1/)
@@ -27,6 +31,7 @@ Ultrasonic Rangefinder schematic is incomplete
 Do all Piico.dev pages link to Github pages: P22, P29
 New units for magnetometr
 Inconsistent treatment of discontinued products
+clippy should try again when config is changed, but only changes when source is changed
 
 ## Design Decisions
 
