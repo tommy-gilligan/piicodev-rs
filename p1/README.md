@@ -2,8 +2,7 @@
 [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-TMP117-MicroPython-Module/tree/2678a75ac4efbc8c9a16ceb55335108b04460996
 [Official Product Site]: https://piico.dev/p1
 [Datasheet]: https://www.ti.com/product/TMP117
-
-# Precision Temperature Sensor
+# Unofficial Rust Driver for PiicoDev Precision Temperature Sensor
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

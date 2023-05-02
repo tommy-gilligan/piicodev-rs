@@ -2,4 +2,8 @@
 [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Transceiver-MicroPython-Module/tree/2c3e4423b86cfcb372a998f5bbc74319162b9a85
 [Official Product Site]: https://piico.dev/p27
 [Datasheet]: https://www.hoperf.com/modules/rf_transceiver/RFM69HCW.html
-# Transceiver
+# Unofficial Rust Driver for PiicoDev Transceiver
+- [Official Hardware Repository]
+- [Official MicroPython Repository]
+- [Official Product Site]
+- [Datasheet]
