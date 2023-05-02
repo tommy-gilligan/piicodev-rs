@@ -1,4 +1,4 @@
-use markdown::mdast::{Definition, Heading};
+use markdown::mdast::{Definition, Heading, Text};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -18,6 +18,8 @@ const UNIQUE_LINKS: [&str; 4] = [
     "Official Product Site",
     "Datasheet",
 ];
+
+const TITLE_PREFIX: &str = "Unofficial Rust Driver for PiicoDev ";
 
 fn find_definition<'a>(
     node: &'a markdown::mdast::Node,
@@ -50,6 +52,13 @@ fn find_package<'a>(packages: &'a [Package], id: &'a PackageId) -> Option<&'a Pa
     packages.iter().find(|package| &(package.id) == id)
 }
 
+fn text(node: &Heading) -> Option<String> {
+    match node.children.clone().pop() {
+        Some(markdown::mdast::Node::Text(Text { value, .. })) => Some(value),
+        _ => None,
+    }
+}
+
 fn main() {
     let cmd = clap::Command::new("xtask")
         .bin_name("xtask")
@@ -65,10 +74,21 @@ fn main() {
                 .unwrap();
 
             // exclude xtask
-            let workspace_members = metadata
+            let mut workspace_members = metadata
                 .workspace_members
                 .into_iter()
-                .filter(|package_id| package_id.repr.starts_with('p'));
+                .filter(|package_id| package_id.repr.starts_with('p'))
+                .collect::<Vec<PackageId>>();
+            workspace_members.sort_by_key(|k| {
+                (*(k.repr))
+                    .strip_prefix("p")
+                    .unwrap()
+                    .split(' ')
+                    .next()
+                    .unwrap()
+                    .parse::<u8>()
+                    .unwrap()
+            });
 
             let mut links: HashMap<String, Vec<camino::Utf8PathBuf>> = HashMap::new();
             let mut all_keywords: HashMap<String, u8> = HashMap::new();
@@ -106,6 +126,11 @@ fn main() {
                     find_main_heading(&mdast).is_some(),
                     "no heading in {readme_path:?}"
                 );
+                let title: String = text(find_main_heading(&mdast).unwrap()).unwrap();
+                let title: &str = title.strip_prefix(TITLE_PREFIX).unwrap();
+                let mut components = package.manifest_path.components().rev();
+                components.next();
+                println!("- [{}](./{}/)", title, components.next().unwrap());
             }
             for (url, readme_paths) in &links {
                 assert!(
