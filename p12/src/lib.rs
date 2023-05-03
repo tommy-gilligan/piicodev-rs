@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 
 use embedded_hal::i2c::I2c;
 
@@ -67,7 +67,10 @@ impl<I2C: I2c> P12<I2C> {
             .write_read(self.address, &[SENSITIVITY_CONTROL], &mut data)?;
         self.i2c.write(
             self.address,
-            &[SENSITIVITY_CONTROL, (data[0] & 0x8F) | (sensitivity << 4)],
+            &[
+                SENSITIVITY_CONTROL,
+                (data[0] & 0x8F) | (sensitivity << 4_u8),
+            ],
         )?;
         Ok(())
     }
@@ -108,8 +111,8 @@ impl<I2C: I2c> P12<I2C> {
         self.i2c
             .write_read(self.address, &[SENSOR_INPUT_3_DELTA_COUNT], &mut data_2)?;
 
-        #[allow(clippy::cast_possible_wrap)]
-        Ok((data_0[0] as i8, data_1[0] as i8, data_2[0] as i8))
+        #[expect(clippy::cast_possible_wrap)]
+        return Ok((data_0[0] as i8, data_1[0] as i8, data_2[0] as i8));
     }
 }
 

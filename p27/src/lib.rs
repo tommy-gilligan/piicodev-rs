@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 
@@ -75,10 +75,9 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
 
         let mut send_data: [u8; 33] = [SET_REG_PAYLOAD; 33];
         for (i, _c) in data.iter().enumerate() {
-            send_data[i + 1] = data[i]
+            send_data[i + 1] = data[i];
         }
-        self.i2c
-            .write(self.address, &send_data[0..(data.len() + 1)])?;
+        self.i2c.write(self.address, &send_data[0..=data.len()])?;
         self.delay.delay_ms(5);
 
         self.i2c.write(self.address, &[SET_REG_PAYLOAD_GO, 1])?;
@@ -216,8 +215,8 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         self.i2c
             .write_read(self.address, &[REG_TX_POWER], &mut data)?;
 
-        #[allow(clippy::cast_possible_wrap)]
-        Ok(data[0] as i8)
+        #[expect(clippy::cast_possible_wrap)]
+        return Ok(data[0] as i8);
     }
 
     /// # Errors
@@ -225,7 +224,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        #[allow(clippy::cast_sign_loss)]
+        #[expect(clippy::cast_sign_loss)]
         self.i2c
             .write(self.address, &[SET_REG_TX_POWER, value as u8])?;
         Ok(())

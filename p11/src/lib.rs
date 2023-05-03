@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
@@ -29,17 +29,16 @@ const MS5637_START_TEMPERATURE_ADC_CONVERSION: u8 = 0x50;
 const MS5637_START_PRESSURE_ADC_CONVERSION: u8 = 0x40;
 const MS5637_CONVERSION_OSR_MASK: u8 = 0x0F;
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 const RESOLUTION_OSR_256: u8 = 0;
-#[allow(dead_code)]
+#[expect(dead_code)]
 const RESOLUTION_OSR_512: u8 = 1;
-#[allow(dead_code)]
+#[expect(dead_code)]
 const RESOLUTION_OSR_1024: u8 = 2;
-#[allow(dead_code)]
+#[expect(dead_code)]
 const RESOLUTION_OSR_2048: u8 = 3;
-#[allow(dead_code)]
+#[expect(dead_code)]
 const RESOLUTION_OSR_4096: u8 = 4;
-#[allow(dead_code)]
 const RESOLUTION_OSR_8192: u8 = 5;
 
 const MS5637_PRESSURE_SENSITIVITY_INDEX: u8 = 1;
@@ -139,15 +138,15 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
         &mut self,
         res: Option<u8>,
     ) -> Result<(Temperature, Pressure), I2C::Error> {
-        let res: u8 = res.unwrap_or(RESOLUTION_OSR_8192);
         if !self.coefficient_valid {
             self.eeprom_coefficient = self.read_eeprom()?;
         }
-        let (cmd_temp, cmd_pressure, time_temp, time_pressure) = set_resolution(res);
+        let (cmd_temp, cmd_pressure, time_temp, time_pressure) =
+            set_resolution(res.unwrap_or(RESOLUTION_OSR_8192));
         let adc_temperature: u32 = self.conversion_read_adc(cmd_temp, time_temp)?;
         let adc_pressure: u32 = self.conversion_read_adc(cmd_pressure, time_pressure)?;
         // Difference between actual and reference temperature = D2 - Tref
-        #[allow(clippy::cast_possible_wrap)]
+        #[expect(clippy::cast_possible_wrap)]
         let d_t: i64 = i64::from(adc_temperature)
             - ((u64::from(self.eeprom_coefficient[MS5637_REFERENCE_TEMPERATURE_INDEX as usize])
                 * 0x100_u64) as i64);
@@ -163,18 +162,18 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
         let mut off2: i64;
         let mut sens2: i64;
 
-        if temp < 2000 {
-            t2 = (3 * (d_t * d_t)) >> 33;
-            off2 = 61 * (temp - 2000) * (temp - 2000) / 16;
-            sens2 = 29 * (temp - 2000) * (temp - 2000) / 16;
-            if temp < -1500 {
-                off2 += 17 * (temp + 1500) * (temp + 1500);
-                sens2 += 9 * ((temp + 1500) * (temp + 1500));
+        if temp < 2000_i64 {
+            t2 = (3_i64 * (d_t * d_t)) >> 33_i64;
+            off2 = 61_i64 * (temp - 2000_i64) * (temp - 2000_i64) / 16_i64;
+            sens2 = 29_i64 * (temp - 2000_i64) * (temp - 2000_i64) / 16_i64;
+            if temp < -1500_i64 {
+                off2 += 17_i64 * (temp + 1500_i64) * (temp + 1500_i64);
+                sens2 += 9_i64 * ((temp + 1500_i64) * (temp + 1500_i64));
             }
         } else {
-            t2 = (5 * (d_t * d_t)) >> 38;
-            off2 = 0;
-            sens2 = 0;
+            t2 = (5_i64 * (d_t * d_t)) >> 38_i64;
+            off2 = 0_i64;
+            sens2 = 0_i64;
         }
 
         //  OFF = OFF_T1 + TCO * dT
@@ -192,14 +191,14 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
         ) + ((i64::from(
             self.eeprom_coefficient[MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX as usize],
         ) * d_t)
-            >> 7);
+            >> 7_i64);
         sens -= sens2;
         //  Temperature compensated pressure = D1 * SENS - OFF
-        let p = (((i64::from(adc_pressure) * sens) >> 21) - off) >> 15;
-        #[allow(clippy::cast_precision_loss)]
-        let temperature = (temp - t2) as f64 / 100.0;
-        #[allow(clippy::cast_precision_loss)]
-        let pressure = p as f64 / 100.0;
+        let p = (((i64::from(adc_pressure) * sens) >> 21_i64) - off) >> 15_i64;
+        #[expect(clippy::cast_precision_loss)]
+        let temperature = (temp - t2) as f64 / 100.0_f64;
+        #[expect(clippy::cast_precision_loss)]
+        let pressure = p as f64 / 100.0_f64;
 
         Ok((
             Temperature::from_celsius(temperature),

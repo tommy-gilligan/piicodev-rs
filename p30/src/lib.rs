@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 
 use embedded_hal::i2c::I2c;
 use measurements::Distance;
@@ -25,7 +25,7 @@ impl<I2C: I2c> P30<I2C> {
         let mut res = Self {
             i2c,
             address,
-            millimeters_per_microsecond: 0.343f64,
+            millimeters_per_microsecond: 0.343_f64,
         };
         res.set_period(20)?;
         res.set_led(true)?;
@@ -140,7 +140,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.set_led(true), Ok(()));
@@ -156,7 +156,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.set_led(false), Ok(()));
@@ -172,7 +172,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.get_led(), Ok(false));
@@ -188,7 +188,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.get_led(), Ok(true));
@@ -208,7 +208,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.whoami(), Ok(0x0110));
@@ -227,7 +227,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.firmware(), Ok((0x01, 0x02)));
@@ -243,7 +243,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.self_test(), Ok(true));
@@ -259,7 +259,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.self_test(), Ok(false));
@@ -275,7 +275,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.new_sample_available(), Ok(true));
@@ -291,7 +291,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.new_sample_available(), Ok(false));
@@ -311,7 +311,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.round_trip_time(), Ok(39723));
@@ -327,7 +327,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.set_period(2000), Ok(()));
@@ -347,7 +347,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
         assert_eq!(p30.get_period(), Ok(1000));
@@ -365,7 +365,7 @@ mod test {
 
         let p30 = P30::new(i2c, 0x35).unwrap();
 
-        assert_eq!(p30.millimeters_per_microsecond, 0.343f64);
+        assert_eq!(p30.millimeters_per_microsecond, 0.343_f64);
         i2c_clone.done();
     }
 
@@ -376,10 +376,10 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
-        p30.millimeters_per_microsecond = 0.890f64;
-        assert_eq!(p30.millimeters_per_microsecond, 0.890f64);
+        p30.millimeters_per_microsecond = 0.890_f64;
+        assert_eq!(p30.millimeters_per_microsecond, 0.890_f64);
         i2c_clone.done();
     }
 
@@ -396,10 +396,10 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2f64,
+            millimeters_per_microsecond: 3.2_f64,
         };
 
-        assert_eq!(p30.distance(), Ok(Distance::from_millimeters(4571.2f64)));
+        assert_eq!(p30.distance(), Ok(Distance::from_millimeters(4571.2_f64)));
         i2c_clone.done();
     }
 }

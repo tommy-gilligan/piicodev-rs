@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 
 use embedded_hal::i2c::I2c;
 use measurements::Temperature;
@@ -37,11 +37,11 @@ impl<I2C: I2c> P1<I2C> {
         let temp_data_raw = u16::from_be_bytes(data);
         if temp_data_raw >= 0x8000 {
             Ok(Temperature::from_celsius(
-                f64::from(temp_data_raw - 0x8000) * 7.8125e-3f64 - 256.0f64,
+                f64::from(temp_data_raw - 0x8000) * 7.8125e-3_f64 - 256.0_f64,
             ))
         } else {
             Ok(Temperature::from_celsius(
-                f64::from(temp_data_raw) * 7.8125e-3f64,
+                f64::from(temp_data_raw) * 7.8125e-3_f64,
             ))
         }
     }

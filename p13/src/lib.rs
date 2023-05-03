@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 
 use embedded_hal::i2c::I2c;
 use smart_leds_trait::SmartLedsWrite;

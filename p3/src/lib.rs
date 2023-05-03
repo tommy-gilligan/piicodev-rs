@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 
@@ -31,7 +31,7 @@ impl<I2C: I2c, DELAY: DelayUs> P3<I2C, DELAY> {
     pub fn read(&mut self) -> Result<f64, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c.write_read(self.address, &[REG_ALS], &mut data)?;
-        Ok(f64::from(u16::from_le_bytes(data)) + 0.0576)
+        Ok(f64::from(u16::from_le_bytes(data)) + 0.0576_f64)
     }
 }
 
@@ -69,7 +69,7 @@ mod test {
 
         let mut p3 = P3::new(i2c, 0x10, MockNoop {}).unwrap();
 
-        assert_eq!(p3.read().unwrap(), 258.0576);
+        assert_eq!(p3.read().unwrap(), 258.0576_f64);
 
         i2c_clone.done();
     }

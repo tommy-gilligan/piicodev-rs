@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 
 use embedded_hal::i2c::I2c;
 
@@ -28,16 +28,16 @@ impl<I2C: I2c> P18<I2C> {
         frequency: Hertz<u32>,
         duration: MillisDuration<u32>,
     ) -> Result<(), I2C::Error> {
-        let frequency: [u8; 2] = u16::to_be_bytes(frequency.to_Hz().try_into().unwrap());
-        let duration: [u8; 2] = u16::to_be_bytes(duration.to_millis().try_into().unwrap());
+        let frequency_bytes: [u8; 2] = u16::to_be_bytes(frequency.to_Hz().try_into().unwrap());
+        let duration_bytes: [u8; 2] = u16::to_be_bytes(duration.to_millis().try_into().unwrap());
         self.i2c.write(
             self.address,
             &[
                 REG_TONE,
-                frequency[0],
-                frequency[1],
-                duration[0],
-                duration[1],
+                frequency_bytes[0],
+                frequency_bytes[1],
+                duration_bytes[0],
+                duration_bytes[1],
             ],
         )?;
         Ok(())
@@ -126,7 +126,7 @@ mod test {
 
         let mut p18 = P18::new(i2c, 0x5C);
 
-        assert_eq!(p18.tone(518u32.Hz(), 3000u32.millis()), Ok(()));
+        assert_eq!(p18.tone(518_u32.Hz(), 3000_u32.millis()), Ok(()));
         i2c_clone.done();
     }
 

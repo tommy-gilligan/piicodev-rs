@@ -25,27 +25,21 @@ fn find_definition<'a>(
     node: &'a markdown::mdast::Node,
     needle_label: &str,
 ) -> Option<&'a Definition> {
-    node.children()
-        .unwrap()
-        .iter()
-        .find_map(|node| match *node {
-            markdown::mdast::Node::Definition(ref definition)
-                if definition.label.as_deref() == Some(needle_label) =>
-            {
-                Some(definition)
-            }
-            _ => None,
-        })
+    node.children().unwrap().iter().find_map(|n| match *n {
+        markdown::mdast::Node::Definition(ref definition)
+            if definition.label.as_deref() == Some(needle_label) =>
+        {
+            Some(definition)
+        }
+        _ => None,
+    })
 }
 
 fn find_main_heading(node: &markdown::mdast::Node) -> Option<&Heading> {
-    node.children()
-        .unwrap()
-        .iter()
-        .find_map(|node| match *node {
-            markdown::mdast::Node::Heading(ref heading) => Some(heading),
-            _ => None,
-        })
+    node.children().unwrap().iter().find_map(|n| match *n {
+        markdown::mdast::Node::Heading(ref heading) => Some(heading),
+        _ => None,
+    })
 }
 
 fn find_package<'a>(packages: &'a [Package], id: &'a PackageId) -> Option<&'a Package> {
@@ -80,14 +74,14 @@ fn main() {
                 .filter(|package_id| package_id.repr.starts_with('p'))
                 .collect::<Vec<PackageId>>();
             workspace_members.sort_by_key(|k| {
-                (*(k.repr))
-                    .strip_prefix("p")
+                return (*(k.repr))
+                    .strip_prefix('p')
                     .unwrap()
                     .split(' ')
                     .next()
                     .unwrap()
                     .parse::<u8>()
-                    .unwrap()
+                    .unwrap();
             });
 
             let mut links: HashMap<String, Vec<camino::Utf8PathBuf>> = HashMap::new();
@@ -127,10 +121,14 @@ fn main() {
                     "no heading in {readme_path:?}"
                 );
                 let title: String = text(find_main_heading(&mdast).unwrap()).unwrap();
-                let title: &str = title.strip_prefix(TITLE_PREFIX).unwrap();
+                let title_without_prefix: &str = title.strip_prefix(TITLE_PREFIX).unwrap();
                 let mut components = package.manifest_path.components().rev();
                 components.next();
-                println!("- [{}](./{}/)", title, components.next().unwrap());
+                println!(
+                    "- [{}](./{}/)",
+                    title_without_prefix,
+                    components.next().unwrap()
+                );
             }
             for (url, readme_paths) in &links {
                 assert!(

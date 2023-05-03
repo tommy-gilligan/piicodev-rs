@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
@@ -28,8 +28,8 @@ impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
     }
 
     pub fn set_frequency(&mut self, frequency: u16) -> Result<(), I2C::Error> {
-        #[allow(clippy::cast_possible_truncation)]
-        #[allow(clippy::cast_sign_loss)]
+        #[expect(clippy::cast_possible_truncation)]
+        #[expect(clippy::cast_sign_loss)]
         let prescale: u8 = (25_000_000.0 / 4096.0 / f64::from(frequency) + 0.5) as u8;
         let mut data: [u8; 1] = [0];
         self.i2c.write_read(self.address, &[0x00], &mut data)?;

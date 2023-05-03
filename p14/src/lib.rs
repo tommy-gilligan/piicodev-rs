@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
 #![no_std]
+#![feature(lint_reasons)]
 use embedded_graphics::prelude::OriginDimensions;
 use embedded_graphics::Pixel;
 use embedded_graphics::{draw_target::DrawTarget, geometry::Size, pixelcolor::BinaryColor};
@@ -110,7 +110,7 @@ impl<I2C: I2c> DrawTarget for P14<I2C> {
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         for Pixel(coord, color) in pixels {
-            if let Ok((x @ 0..=127u32, y @ 0..=63u32)) = coord.try_into() {
+            if let Ok((x @ 0..=127_u32, y @ 0..=63_u32)) = coord.try_into() {
                 let mask: u8 = 1 << (y % 8);
                 let index: usize = x as usize + (y as usize / 8) * (WIDTH as usize);
 
