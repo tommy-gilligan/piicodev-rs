@@ -23,6 +23,18 @@ pub enum TouchMode {
     Multi = 0x7F,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error<E> {
+    InvalidSensitivity,
+    I2cError(E),
+}
+
+impl<E> From<E> for Error<E> {
+    fn from(error: E) -> Self {
+        Error::I2cError(error)
+    }
+}
+
 impl<I2C: I2c> P12<I2C> {
     /// # Errors
     pub fn new(
@@ -30,7 +42,7 @@ impl<I2C: I2c> P12<I2C> {
         address: u8,
         touch_mode: Option<TouchMode>,
         sensitivity: Option<u8>,
-    ) -> Result<Self, I2C::Error> {
+    ) -> Result<Self, Error<I2C::Error>> {
         let mut res = Self { i2c, address };
 
         let mut data: [u8; 1] = [0];
@@ -58,9 +70,9 @@ impl<I2C: I2c> P12<I2C> {
     }
 
     /// # Errors
-    pub fn set_sensitivity(&mut self, sensitivity: u8) -> Result<(), I2C::Error> {
+    pub fn set_sensitivity(&mut self, sensitivity: u8) -> Result<(), Error<I2C::Error>> {
         if sensitivity > 7 {
-            // error
+            return Err(Error::InvalidSensitivity);
         }
         let mut data: [u8; 1] = [0];
         self.i2c
@@ -124,9 +136,10 @@ extern crate std;
 mod test {
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
+    use embedded_hal::i2c::ErrorKind;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::P12;
+    use crate::{Error, P12};
 
     #[test]
     pub fn new() {
@@ -167,6 +180,32 @@ mod test {
 
         let mut p12 = P12 { i2c, address: 0x28 };
         p12.set_sensitivity(4).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_sensitivity_with_error() {
+        let i2c_error = ErrorKind::Other;
+        let expectations =
+            [I2cTransaction::write_read(0x28, vec![0x1F], vec![0x87]).with_error(i2c_error)];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p12 = P12 { i2c, address: 0x28 };
+        assert_eq!(p12.set_sensitivity(4), Err(Error::I2cError(i2c_error)));
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_sensitivity_error() {
+        let expectations = [];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p12 = P12 { i2c, address: 0x28 };
+        assert_eq!(p12.set_sensitivity(10), Err(Error::InvalidSensitivity));
 
         i2c_clone.done();
     }

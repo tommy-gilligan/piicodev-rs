@@ -36,6 +36,36 @@ pub struct P14<I2C> {
     framebuffer: [u8; BUFFER_SIZE],
 }
 
+const INIT_COMMANDS: [u8; 27] = [
+    SET_DISP,
+    SET_MEM_ADDR,
+    0x00,
+    SET_DISP_START_LINE,
+    SET_SEG_REMAP | 0x01,
+    SET_MUX_RATIO,
+    (HEIGHT - 1),
+    SET_COM_OUT_DIR | 0x08,
+    SET_DISP_OFFSET,
+    0x00,
+    SET_COM_PIN_CFG,
+    0x12,
+    SET_DISP_CLK_DIV,
+    0x80,
+    SET_PRECHARGE,
+    0xF1,
+    SET_VCOM_DESEL,
+    0x30,
+    SET_CONTRAST,
+    0xFF,
+    SET_ENTIRE_ON,
+    SET_NORM_INV,
+    SET_IREF_SELECT,
+    0x30,
+    SET_CHARGE_PUMP,
+    0x14,
+    SET_DISP | 0x01,
+];
+
 impl<I2C: I2c> P14<I2C> {
     /// # Errors
     pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
@@ -45,36 +75,8 @@ impl<I2C: I2c> P14<I2C> {
             framebuffer: [0; BUFFER_SIZE],
         };
 
-        for cmd in [
-            SET_DISP,
-            SET_MEM_ADDR,
-            0x00,
-            SET_DISP_START_LINE,
-            SET_SEG_REMAP | 0x01,
-            SET_MUX_RATIO,
-            (HEIGHT - 1),
-            SET_COM_OUT_DIR | 0x08,
-            SET_DISP_OFFSET,
-            0x00,
-            SET_COM_PIN_CFG,
-            0x12,
-            SET_DISP_CLK_DIV,
-            0x80,
-            SET_PRECHARGE,
-            0xF1,
-            SET_VCOM_DESEL,
-            0x30,
-            SET_CONTRAST,
-            0xFF,
-            SET_ENTIRE_ON,
-            SET_NORM_INV,
-            SET_IREF_SELECT,
-            0x30,
-            SET_CHARGE_PUMP,
-            0x14,
-            SET_DISP | 0x01,
-        ] {
-            res.i2c.write(res.address, &[0x80, cmd])?;
+        for command in INIT_COMMANDS {
+            res.i2c.write(res.address, &[0x80, command])?;
         }
         Ok(res)
     }

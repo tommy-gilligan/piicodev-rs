@@ -18,10 +18,10 @@ impl<I2C: I2c> P13<I2C> {
 
 impl<I2C: I2c> SmartLedsWrite for P13<I2C> {
     type Color = smart_leds_trait::RGB8;
-    type Error = ();
+    type Error = I2C::Error;
 
     /// # Errors
-    fn write<T, I>(&mut self, iterator: T) -> Result<(), ()>
+    fn write<T, I>(&mut self, iterator: T) -> Result<(), Self::Error>
     where
         T: Iterator<Item = I>,
         I: Into<Self::Color>,
@@ -36,7 +36,7 @@ impl<I2C: I2c> SmartLedsWrite for P13<I2C> {
         {
             data[i + 1] = v;
         }
-        self.i2c.write(self.address, &data).unwrap();
+        self.i2c.write(self.address, &data)?;
 
         Ok(())
     }

@@ -217,6 +217,7 @@ mod test {
     extern crate embedded_hal_mock;
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use measurements::{Pressure, Temperature};
 
     use crate::{set_resolution, P11};
 
@@ -282,6 +283,82 @@ mod test {
         };
 
         assert_eq!(p11.conversion_read_adc(90, 0).unwrap(), 0x0008_0706);
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn read_temperature_and_pressure_no_coefficients() {
+        let expectations = [
+            I2cTransaction::write_read(0x76, vec![0xA0], vec![0x02, 0x01]),
+            I2cTransaction::write_read(0x76, vec![0xA2], vec![0x03, 0x02]),
+            I2cTransaction::write_read(0x76, vec![0xA4], vec![0x04, 0x03]),
+            I2cTransaction::write_read(0x76, vec![0xA6], vec![0x05, 0x04]),
+            I2cTransaction::write_read(0x76, vec![0xA8], vec![0x06, 0x05]),
+            I2cTransaction::write_read(0x76, vec![0xAA], vec![0x07, 0x06]),
+            I2cTransaction::write_read(0x76, vec![0xAC], vec![0x08, 0x07]),
+            I2cTransaction::write(0x76, vec![90]),
+            I2cTransaction::write_read(0x76, vec![0x00], vec![0xF0, 0x00, 0x00]),
+            I2cTransaction::write(0x76, vec![74]),
+            I2cTransaction::write_read(0x76, vec![0x00], vec![0x78, 0x77, 0x76]),
+        ];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p11 = P11 {
+            i2c,
+            address: 0x76,
+            delay: MockNoop {},
+            coefficient_valid: false,
+            eeprom_coefficient: [0; 7],
+        };
+
+        assert_eq!(
+            p11.read_temperature_and_pressure(None).unwrap(),
+            (
+                Temperature::from_kelvin(288.15),
+                Pressure::from_pascals(8066.0),
+            )
+        );
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn read_temperature_and_pressure_with_coefficients() {
+        let expectations = [
+            I2cTransaction::write(0x76, vec![90]),
+            I2cTransaction::write_read(0x76, vec![0x00], vec![0xF0, 0x00, 0x00]),
+            I2cTransaction::write(0x76, vec![74]),
+            I2cTransaction::write_read(0x76, vec![0x00], vec![0x78, 0x77, 0x76]),
+        ];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p11 = P11 {
+            i2c,
+            address: 0x76,
+            delay: MockNoop {},
+            coefficient_valid: true,
+            // exercises temp < 2000 branch
+            eeprom_coefficient: [
+                -23i16 as u16,
+                -23i16 as u16,
+                -23i16 as u16,
+                -23i16 as u16,
+                -23i16 as u16,
+                -23i16 as u16,
+                -23i16 as u16,
+            ],
+        };
+
+        assert_eq!(
+            p11.read_temperature_and_pressure(None).unwrap(),
+            (
+                Temperature::from_kelvin(207.91999999999996),
+                Pressure::from_pascals(185262.0),
+            )
+        );
         i2c_clone.done();
     }
 }

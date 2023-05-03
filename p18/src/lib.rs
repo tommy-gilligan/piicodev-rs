@@ -2,6 +2,7 @@
 #![no_std]
 #![feature(lint_reasons)]
 
+use core::num::TryFromIntError;
 use embedded_hal::i2c::I2c;
 
 const REG_STATUS: u8 = 0x01;
@@ -18,6 +19,18 @@ pub struct P18<I2C> {
 
 use fugit::{ExtU32, Hertz, MillisDuration, RateExtU32};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error<E> {
+    TryFromIntError(TryFromIntError),
+    I2cError(E),
+}
+
+impl<E> From<E> for Error<E> {
+    fn from(error: E) -> Self {
+        Error::I2cError(error)
+    }
+}
+
 impl<I2C: I2c> P18<I2C> {
     pub const fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
@@ -27,9 +40,19 @@ impl<I2C: I2c> P18<I2C> {
         &mut self,
         frequency: Hertz<u32>,
         duration: MillisDuration<u32>,
-    ) -> Result<(), I2C::Error> {
-        let frequency_bytes: [u8; 2] = u16::to_be_bytes(frequency.to_Hz().try_into().unwrap());
-        let duration_bytes: [u8; 2] = u16::to_be_bytes(duration.to_millis().try_into().unwrap());
+    ) -> Result<(), Error<I2C::Error>> {
+        let frequency_bytes: [u8; 2] = u16::to_be_bytes(
+            frequency
+                .to_Hz()
+                .try_into()
+                .map_err(Error::TryFromIntError)?,
+        );
+        let duration_bytes: [u8; 2] = u16::to_be_bytes(
+            duration
+                .to_millis()
+                .try_into()
+                .map_err(Error::TryFromIntError)?,
+        );
         self.i2c.write(
             self.address,
             &[
@@ -43,7 +66,7 @@ impl<I2C: I2c> P18<I2C> {
         Ok(())
     }
 
-    pub fn no_tone(&mut self) -> Result<(), I2C::Error> {
+    pub fn no_tone(&mut self) -> Result<(), Error<I2C::Error>> {
         self.tone(0.Hz(), 0.millis())
     }
 
@@ -110,10 +133,11 @@ extern crate std;
 mod test {
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
+    use embedded_hal::i2c::ErrorKind;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use fugit::{ExtU32, RateExtU32};
 
-    use crate::P18;
+    use crate::{Error, P18};
 
     #[test]
     pub fn tone() {
@@ -127,6 +151,24 @@ mod test {
         let mut p18 = P18::new(i2c, 0x5C);
 
         assert_eq!(p18.tone(518_u32.Hz(), 3000_u32.millis()), Ok(()));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn tone_error() {
+        let i2c_error = ErrorKind::Other;
+        let expectations = [
+            I2cTransaction::write(0x5C, vec![0x05, 0x02, 0x06, 0x0B, 0xB8]).with_error(i2c_error),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p18 = P18::new(i2c, 0x5C);
+
+        assert_eq!(
+            p18.tone(518_u32.Hz(), 3000_u32.millis()),
+            Err(Error::I2cError(i2c_error))
+        );
         i2c_clone.done();
     }
 

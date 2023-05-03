@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![feature(lint_reasons)]
+use core::num::TryFromIntError;
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 
@@ -39,6 +40,18 @@ const SET_REG_PAYLOAD_LENGTH: u8 = 0xA1;
 const SET_REG_PAYLOAD: u8 = 0xA2;
 const SET_REG_PAYLOAD_GO: u8 = 0xA4;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error<E> {
+    TryFromIntError(TryFromIntError),
+    I2cError(E),
+}
+
+impl<E> From<E> for Error<E> {
+    fn from(error: E) -> Self {
+        Error::I2cError(error)
+    }
+}
+
 impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     /// # Errors
     pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
@@ -65,11 +78,14 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 
     /// # Errors
-    pub fn send(&mut self, address: u16, data: &[u8]) -> Result<(), I2C::Error> {
+    pub fn send(&mut self, address: u16, data: &[u8]) -> Result<(), Error<I2C::Error>> {
         self.set_destination_radio_address(address)?;
         self.i2c.write(
             self.address,
-            &[SET_REG_PAYLOAD_LENGTH, data.len().try_into().unwrap()],
+            &[
+                SET_REG_PAYLOAD_LENGTH,
+                data.len().try_into().map_err(Error::TryFromIntError)?,
+            ],
         )?;
         self.delay.delay_ms(5);
 
@@ -280,10 +296,11 @@ extern crate std;
 mod test {
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
+    use embedded_hal::i2c::ErrorKind;
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::P27;
+    use crate::{Error, P27};
 
     #[test]
     pub fn new() {
@@ -526,6 +543,24 @@ mod test {
             address: 0x09,
         };
         assert_eq!(p27.send(31, b"wave"), Ok(()));
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn send_error() {
+        let i2c_error = ErrorKind::Other;
+        let expectations =
+            [I2cTransaction::write(0x09, vec![0x97, 0x00, 0x1F]).with_error(i2c_error)];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: 0x09,
+        };
+        assert_eq!(p27.send(31, b"wave"), Err(Error::I2cError(i2c_error)));
 
         i2c_clone.done();
     }
