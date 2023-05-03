@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p12
 [Datasheet]: https://www.microchip.com/en-us/product/CAP1203
 # Unofficial Rust Driver for PiicoDev Capacitive Touch Sensor
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p1
 [Datasheet]: https://www.ti.com/product/TMP117
 # Unofficial Rust Driver for PiicoDev Precision Temperature Sensor
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

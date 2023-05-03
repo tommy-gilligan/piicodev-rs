@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+#![warn(missing_docs)]
 #![no_std]
 use embedded_graphics::prelude::OriginDimensions;
 use embedded_graphics::Pixel;

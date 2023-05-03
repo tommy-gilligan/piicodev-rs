@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p27
 [Datasheet]: https://www.hoperf.com/modules/rf_transceiver/RFM69HCW.html
 # Unofficial Rust Driver for PiicoDev Transceiver
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

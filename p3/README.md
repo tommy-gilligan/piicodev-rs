@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p3
 [Datasheet]: https://www.vishay.com/en/product/84366/
 # Unofficial Rust Driver for PiicoDev Ambient Light Sensor
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

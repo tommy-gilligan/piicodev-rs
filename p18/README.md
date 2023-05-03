@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p18
 [Datasheet]: https://datasheet.lcsc.com/lcsc/1811141116_Jiangsu-Huaneng-Elec-MLT-8540H_C95298.pdf
 # Unofficial Rust Driver for PiicoDev Buzzer
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

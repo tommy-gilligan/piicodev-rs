@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p10
 [Datasheet]: https://www.vishay.com/docs/84276/veml6040.pdf
 # Unofficial Rust Driver for PiicoDev Color Sensor
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

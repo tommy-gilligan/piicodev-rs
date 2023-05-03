@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p11
 [Datasheet]: https://www.infineon.com/cms/en/product/sensor/pressure-sensors/pressor-iot/?gclid=CjwKCAjw6IiiBhAOEiwALNqncTXLg-VcFVTQ0JKX3Pw2DNB0FBmP0Hbo4GsIiMfW9RfIf8YXXQG48hoCTccQAvD_BwE&gclsrc=aw.ds
 # Unofficial Rust Driver for PiicoDev Pressure Sensor
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p13
 [Datasheet]: https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf
 # Unofficial Rust Driver for PiicoDev 3x RGB LED
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

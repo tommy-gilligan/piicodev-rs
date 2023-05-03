@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p7
 [Datasheet]: https://www.st.com/en/imaging-and-photonics-solutions/vl53l1x.html
 # Unofficial Rust Driver for PiicoDev Laser Distance Sensor
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]

@@ -3,6 +3,7 @@
 [Official Product Site]: https://piico.dev/p30
 [Datasheet]: https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf
 # Unofficial Rust Driver for PiicoDev Ultrasonic Rangefinder
+## External Links
 - [Official Hardware Repository]
 - [Official MicroPython Repository]
 - [Official Product Site]
