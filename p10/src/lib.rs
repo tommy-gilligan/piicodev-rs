@@ -6,6 +6,12 @@ use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 use palette::{LinSrgb, SrgbLuma};
 
+/// Driver for PiicoDev P10
+///
+/// Typical usage:
+///
+/// 1. Create an instance through [`P10::new`]
+/// 2. Read color information from the instance with [`P10::read`]
 pub struct P10<I2C, DELAY> {
     i2c: I2C,
     delay: DELAY,
@@ -26,6 +32,13 @@ const DEFAULT_SETTINGS: u8 = 0x00;
 const SHUTDOWN: u8 = 0x01;
 
 impl<I2C: I2c, DELAY: DelayUs> P10<I2C, DELAY> {
+    /// Acquire a new P10 driver instance
+    ///
+    /// Arguments:
+    /// * `i2c`: should be acquired from the target platform's HAL
+    /// * `address`: must match the hardware address of the P10.  This should be 0x10.
+    /// * `delay`: should also be acquired from the target platform's HAL
+    ///
     /// # Errors
     pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
         let mut res = Self {
