@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         # All generated code should be running on stable now
-        rust: [nightly, stable]
+        rust: [nightly]
         include:
           # Nightly is only for reference and allowed to fail
           - rust: nightly
@@ -31,9 +31,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: thumbv6m-none-eabi
       - run: cargo install flip-link
-      - run: cargo build --all
       - run: cargo build --all --lib --examples
-      - run: cargo build --all --release
       - run: cargo build --all --release --lib --examples
   linting:
     name: Linting
@@ -44,6 +42,7 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: nightly
           components: clippy
           target: thumbv6m-none-eabi
 #            -W clippy::unwrap-in-result
@@ -57,6 +56,7 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: nightly
           components: clippy
           target: thumbv6m-none-eabi
       - run: cargo test
@@ -69,6 +69,7 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: nightly
           components: rustfmt
           target: thumbv6m-none-eabi
       - run: cargo fmt -- --check
