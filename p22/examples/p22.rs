@@ -13,7 +13,7 @@ mod linux {
         let mut p22 = P22::new(i2c, 0x35);
 
         loop {
-            println!("{:?}", p22.raw().unwrap());
+            println!("{:?}", p22.read().unwrap());
         }
     }
 }
@@ -96,7 +96,7 @@ mod pico {
         let mut p22 = P22::new(i2c, 0x10);
 
         loop {
-            info!("{:?}", p22.raw().unwrap());
+            info!("{:?}", p22.read().unwrap());
             info!("{:?}", p22.self_test().unwrap());
             info!("light on!");
             led_pin.set_high().unwrap();

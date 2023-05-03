@@ -21,7 +21,7 @@ impl<I2C: I2c> P22<I2C> {
         Self { i2c, address }
     }
 
-    pub fn raw(&mut self) -> Result<u16, I2C::Error> {
+    pub fn read(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c.write_read(self.address, &[REG_POT], &mut data)?;
         Ok(u16::from_be_bytes(data))
@@ -88,7 +88,7 @@ mod test {
     use crate::P22;
 
     #[test]
-    pub fn raw() {
+    pub fn read() {
         let expectations = [I2cTransaction::write_read(
             0x35,
             vec![0x05],
@@ -99,7 +99,7 @@ mod test {
 
         let mut p22 = P22::new(i2c, 0x35);
 
-        assert_eq!(p22.raw(), Ok(61453));
+        assert_eq!(p22.read(), Ok(61453));
         i2c_clone.done();
     }
 
