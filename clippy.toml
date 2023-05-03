@@ -1,1 +1,6 @@
 doc-valid-idents = ["PiicoDev", ".."]
+allow-unwrap-in-tests = false
+allow-dbg-in-tests = false
+allow-expect-in-tests = false
+allow-print-in-tests = false
+cognitive-complexity-threshold = 4
