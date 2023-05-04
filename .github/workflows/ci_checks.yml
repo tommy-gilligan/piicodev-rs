@@ -8,15 +8,10 @@ env:
 jobs:
   building:
     name: Building
-    continue-on-error: ${{ matrix.experimental || false }}
+    continue-on-error: false
     strategy:
       matrix:
-        # All generated code should be running on stable now
         rust: [nightly]
-        include:
-          # Nightly is only for reference and allowed to fail
-          - rust: nightly
-            experimental: true
         os:
           # Check compilation works on common OSes
           # (i.e. no path issues)
@@ -30,7 +25,17 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: thumbv6m-none-eabi
-      - run: cargo install flip-link
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/.crates.toml
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-matrix-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - run: cargo install flip-link -Z install-upgrade
       - run: cargo build --all --lib --examples
       - run: cargo build --all --release --lib --examples
   linting:
@@ -45,6 +50,16 @@ jobs:
           toolchain: nightly
           components: clippy
           target: thumbv6m-none-eabi
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/.crates.toml
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-linting-cargo-${{ hashFiles('**/Cargo.toml') }}
       - run: cargo clippy --examples --lib --tests --allow-dirty --fix --all-targets --all-features -- -W clippy::nursery -A clippy::suboptimal_flops -W clippy::pedantic -A clippy::cast_sign_loss -A clippy::float_cmp -A clippy::module_name_repetitions -A clippy::missing_errors_doc -A clippy::cast_possible_wrap -A clippy::similar_names -A clippy::cast_possible_truncation -A clippy::cast_precision_loss -A clippy::missing-panics-doc -W clippy::alloc_instead_of_core -W clippy::dbg_macro -W clippy::decimal_literal_representation -W clippy::default_numeric_fallback -W clippy::empty_structs_with_brackets -W clippy::fn_to_numeric_cast_any -W clippy::get_unwrap -W clippy::impl_trait_in_params -W clippy::lossy_float_literal -W clippy::mixed_read_write_in_expression -W clippy::mod_module_files -W clippy::multiple_inherent_impl -W clippy::multiple_unsafe_ops_per_block -W clippy::mutex_atomic -W clippy::panic -W clippy::panic_in_result_fn -W clippy::print_stderr -W clippy::rest_pat_in_fully_bound_structs -W clippy::same_name_method -W clippy::semicolon_outside_block -W clippy::shadow_reuse -W clippy::shadow_unrelated -W clippy::std_instead_of_core -W clippy::str_to_string -W clippy::string_to_string -W clippy::suspicious_xor_used_as_pow -W clippy::try_err -W clippy::undocumented_unsafe_blocks -W clippy::unneeded_field_pattern -W clippy::unseparated_literal_suffix -W clippy::unwrap-in-result
   testing:
     name: Testing
@@ -58,6 +73,17 @@ jobs:
           toolchain: nightly
           components: clippy
           target: thumbv6m-none-eabi
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/.crates.toml
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-testing-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - run: cargo build --tests
       - run: cargo test
   formatting:
     name: Formatting
@@ -80,14 +106,39 @@ jobs:
         with:
           submodules: true
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/.crates.toml
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-xtask-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - run: cargo build --package xtask
       - run: cargo xtask ci
-        #   coverage:
-        #     name: Coverage
-        #     runs-on: ubuntu-latest
-        #     steps:
-        #       - uses: actions/checkout@v3
-        #         with:
-        #           submodules: true
-        #       - uses: dtolnay/rust-toolchain@stable
-        #       - run: cargo install cargo-tarpaulin
-        #       - run: cargo tarpaulin --exclude-files 'xtask/*' --fail-under 100 --engine LLvm
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/.crates.toml
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-coverage-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - run: cargo install cargo-tarpaulin -Z install-upgrade
+      - run: cargo tarpaulin --exclude-files 'xtask/*' --fail-under 80 --engine LLvm
