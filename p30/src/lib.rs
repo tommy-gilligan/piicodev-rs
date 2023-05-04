@@ -2,18 +2,34 @@
 #![no_std]
 #![feature(lint_reasons)]
 
+use core::cell::Cell;
 use embedded_hal::i2c::I2c;
 use measurements::Distance;
 
 pub struct P30<I2C> {
     i2c: I2C,
     address: u8,
-    millimeters_per_microsecond: f64,
+    pub millimeters_per_microsecond: Cell<f64>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error<E> {
+    I2cError(E),
+    ArgumentError,
+    UnexpectedDevice,
+}
+
+impl<E> From<E> for Error<E> {
+    fn from(error: E) -> Self {
+        Error::I2cError(error)
+    }
+}
+
+const DEVICE_ID: u16 = 578;
 const REG_STATUS: u8 = 0x08;
 const REG_FIRM_MAJ: u8 = 0x02;
 const REG_FIRM_MIN: u8 = 0x03;
+const REG_I2C_ADDRESS: u8 = 0x04;
 const REG_RAW: u8 = 0x05;
 const REG_PERIOD: u8 = 0x06;
 const REG_LED: u8 = 0x07;
@@ -21,12 +37,15 @@ const REG_SELF_TEST: u8 = 0x09;
 const REG_WHOAMI: u8 = 0x01;
 
 impl<I2C: I2c> P30<I2C> {
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: u8) -> Result<Self, Error<I2C::Error>> {
         let mut res = Self {
             i2c,
             address,
-            millimeters_per_microsecond: 0.343_f64,
+            millimeters_per_microsecond: Cell::new(0.343_f64),
         };
+        if res.whoami()? != DEVICE_ID {
+            return Err(Error::UnexpectedDevice);
+        }
         res.set_period(20)?;
         res.set_led(true)?;
 
@@ -35,7 +54,7 @@ impl<I2C: I2c> P30<I2C> {
 
     pub fn distance(&mut self) -> Result<Distance, I2C::Error> {
         Ok(Distance::from_millimeters(
-            f64::from(self.round_trip_time()?) * self.millimeters_per_microsecond / 2.0,
+            f64::from(self.round_trip_time()?) * self.millimeters_per_microsecond.get() / 2.0,
         ))
     }
 
@@ -116,6 +135,16 @@ impl<I2C: I2c> P30<I2C> {
             Ok(true)
         }
     }
+
+    // should somehow destroy instance after call
+    pub fn set_address(&mut self, new_address: u8) -> Result<(), Error<I2C::Error>> {
+        if !(0x08..=0x77).contains(&new_address) {
+            return Err(Error::ArgumentError);
+        }
+        self.i2c
+            .write(self.address, &[REG_I2C_ADDRESS, new_address])?;
+        Ok(())
+    }
 }
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
@@ -126,10 +155,11 @@ extern crate std;
 mod test {
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
+    use core::cell::Cell;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use measurements::Distance;
 
-    use crate::P30;
+    use crate::{Error, P30};
 
     #[test]
     pub fn set_led_on() {
@@ -140,7 +170,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.set_led(true), Ok(()));
@@ -156,7 +186,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.set_led(false), Ok(()));
@@ -172,7 +202,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.get_led(), Ok(false));
@@ -188,7 +218,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.get_led(), Ok(true));
@@ -208,7 +238,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.whoami(), Ok(0x0110));
@@ -227,7 +257,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.firmware(), Ok((0x01, 0x02)));
@@ -243,7 +273,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.self_test(), Ok(true));
@@ -259,7 +289,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.self_test(), Ok(false));
@@ -275,7 +305,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.new_sample_available(), Ok(true));
@@ -291,7 +321,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.new_sample_available(), Ok(false));
@@ -311,7 +341,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.round_trip_time(), Ok(39723));
@@ -327,7 +357,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.set_period(2000), Ok(()));
@@ -347,7 +377,7 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.get_period(), Ok(1000));
@@ -357,6 +387,7 @@ mod test {
     #[test]
     pub fn new() {
         let expectations = [
+            I2cTransaction::write_read(0x35, vec![0x01], vec![0x02, 0x42]),
             I2cTransaction::write(0x35, vec![0x86, 0x00, 0x14]),
             I2cTransaction::write(0x35, vec![0x87, 0x01]),
         ];
@@ -365,7 +396,21 @@ mod test {
 
         let p30 = P30::new(i2c, 0x35).unwrap();
 
-        assert_eq!(p30.millimeters_per_microsecond, 0.343_f64);
+        assert_eq!(p30.millimeters_per_microsecond.get(), 0.343_f64);
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn new_unexpected_device() {
+        let expectations = [I2cTransaction::write_read(
+            0x35,
+            vec![0x01],
+            vec![0x01, 0x10],
+        )];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        assert_eq!(P30::new(i2c, 0x35).err(), Some(Error::UnexpectedDevice));
         i2c_clone.done();
     }
 
@@ -373,13 +418,13 @@ mod test {
     pub fn set_millimeters_per_microsecond() {
         let i2c = I2cMock::new(&[]);
         let mut i2c_clone = i2c.clone();
-        let mut p30 = P30 {
+        let p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
-        p30.millimeters_per_microsecond = 0.890_f64;
-        assert_eq!(p30.millimeters_per_microsecond, 0.890_f64);
+        p30.millimeters_per_microsecond.set(0.890_f64);
+        assert_eq!(p30.millimeters_per_microsecond.get(), 0.890_f64);
         i2c_clone.done();
     }
 
@@ -396,10 +441,58 @@ mod test {
         let mut p30 = P30 {
             i2c,
             address: 0x35,
-            millimeters_per_microsecond: 3.2_f64,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
         assert_eq!(p30.distance(), Ok(Distance::from_millimeters(4571.2_f64)));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_address() {
+        let expectations = [I2cTransaction::write(0x35, vec![0x04, 0x69])];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+        p30.set_address(0x69).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_address_too_small() {
+        let expectations = [];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+        assert_eq!(p30.set_address(0x07), Err(Error::ArgumentError));
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_address_too_large() {
+        let expectations = [];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+        assert_eq!(p30.set_address(0x78), Err(Error::ArgumentError));
+
         i2c_clone.done();
     }
 }
