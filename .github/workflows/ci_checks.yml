@@ -6,38 +6,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  building:
-    name: Building
-    continue-on-error: false
-    strategy:
-      matrix:
-        rust: [nightly]
-        os:
-          # Check compilation works on common OSes
-          # (i.e. no path issues)
-          - ubuntu-latest
-          - macOS-latest
-          - windows-latest
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-          target: thumbv6m-none-eabi
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/.crates.toml
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-matrix-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - run: cargo install flip-link -Z install-upgrade
-      - run: cargo build --all --lib --examples
-      - run: cargo build --all --release --lib --examples
   linting:
     name: Linting
     runs-on: ubuntu-latest
@@ -141,4 +109,4 @@ jobs:
             target/
           key: ${{ runner.os }}-coverage-cargo-${{ hashFiles('**/Cargo.toml') }}
       - run: cargo install cargo-tarpaulin -Z install-upgrade
-      - run: cargo tarpaulin --exclude-files 'xtask/*' --fail-under 80 --engine LLvm
+      - run: cargo tarpaulin --exclude-files 'xtask/*' --fail-under 95 --engine LLvm --skip-clean
