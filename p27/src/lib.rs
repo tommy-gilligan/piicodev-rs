@@ -4,6 +4,7 @@
 use core::num::TryFromIntError;
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
+use fugit::{Hertz, RateExtU32};
 
 pub struct P27<I2C, DELAY> {
     i2c: I2C,
@@ -15,8 +16,6 @@ const DEVICE_ID: u16 = 495;
 const REG_WHOAMI: u8 = 0x01;
 const REG_TX_POWER: u8 = 0x13;
 const REG_RFM69_TO_NODE_ID: u8 = 0x17;
-const REG_RFM69_REG: u8 = 0x18;
-const REG_RFM69_VALUE: u8 = 0x19;
 const REG_PAYLOAD_NEW: u8 = 0x23;
 const REG_TRANSCEIVER_READY: u8 = 0x25;
 const RFM69_REG_BITRATEMSB: u8 = 0x03;
@@ -39,11 +38,14 @@ const REG_PAYLOAD: u8 = 0x22;
 const SET_REG_PAYLOAD_LENGTH: u8 = 0xA1;
 const SET_REG_PAYLOAD: u8 = 0xA2;
 const SET_REG_PAYLOAD_GO: u8 = 0xA4;
+const F_STEP: u32 = 61;
+const F_XOSC: u32 = 32_000_000;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error<E> {
     TryFromIntError(TryFromIntError),
     I2cError(E),
+    ArgumentError,
 }
 
 impl<E> From<E> for Error<E> {
@@ -54,7 +56,7 @@ impl<E> From<E> for Error<E> {
 
 impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     /// # Errors
-    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
+    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, Error<I2C::Error>> {
         let mut res = Self {
             i2c,
             delay,
@@ -69,8 +71,8 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         }
         res.i2c.write(res.address, &[SET_REG_RFM69_NETWORK_ID, 0])?;
 
-        res.set_radio_frequency(922)?;
-        res.set_speed(1)?;
+        res.set_radio_frequency(922.MHz())?;
+        res.set_bit_rate(9_600)?;
 
         res.set_tx_power(20)?;
         if res.whoami()? != DEVICE_ID {}
@@ -125,15 +127,6 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 
     /// # Errors
-    pub fn get_rfm69_register(&mut self, register: u8) -> Result<u8, I2C::Error> {
-        let mut data: [u8; 1] = [0];
-        self.i2c.write(self.address, &[REG_RFM69_REG, register])?;
-        self.i2c
-            .write_read(self.address, &[REG_RFM69_VALUE], &mut data)?;
-        Ok(data[0])
-    }
-
-    /// # Errors
     pub fn set_rfm69_register(&mut self, register: u8, value: u8) -> Result<(), I2C::Error> {
         self.i2c
             .write(self.address, &[SET_REG_RFM69_REG, register])?;
@@ -143,29 +136,11 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 
     /// # Errors
-    pub fn get_speed(&mut self) -> Result<u8, I2C::Error> {
-        self.delay.delay_ms(10);
-        let msb = self.get_rfm69_register(RFM69_REG_BITRATEMSB)?;
-        self.delay.delay_ms(10);
-        let lsb = self.get_rfm69_register(RFM69_REG_BITRATELSB)?;
-        self.delay.delay_ms(10);
-
-        let speed = match (msb, lsb) {
-            (0x0D, 0x05) => 1,
-            (0x00, 0x6B) => 3,
-            _ => 2,
-        };
-
-        Ok(speed)
-    }
-
-    /// # Errors
-    pub fn set_speed(&mut self, speed: u8) -> Result<(), I2C::Error> {
-        let (msb, lsb) = match speed {
-            1 => (0x0D, 0x05),
-            3 => (0x00, 0x6B),
-            _ => (0x01, 0x16),
-        };
+    pub fn set_bit_rate(&mut self, bit_rate: u32) -> Result<(), Error<I2C::Error>> {
+        if !(1_u32..=F_XOSC).contains(&bit_rate) {
+            return Err(Error::ArgumentError);
+        }
+        let [_, _, msb, lsb] = u32::to_be_bytes(F_XOSC / bit_rate);
 
         self.delay.delay_ms(10);
         self.set_rfm69_register(RFM69_REG_BITRATEMSB, msb)?;
@@ -176,48 +151,21 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 
     /// # Errors
-    pub fn get_radio_frequency(&mut self) -> Result<u16, I2C::Error> {
+    pub fn set_radio_frequency(&mut self, frequency: Hertz<u32>) -> Result<(), Error<I2C::Error>> {
+        if frequency.to_MHz() < 890 || frequency.to_MHz() > 1020 {
+            return Err(Error::ArgumentError);
+        }
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        self.delay.delay_ms(5);
-        let msb = self.get_rfm69_register(RFM69_REG_FRFMSB)?;
-        self.delay.delay_ms(5);
-        let mid = self.get_rfm69_register(RFM69_REG_FRFMID)?;
-        self.delay.delay_ms(5);
-        let lsb = self.get_rfm69_register(RFM69_REG_FRFLSB)?;
-        self.delay.delay_ms(5);
-
-        let frequency = match (msb, mid, lsb) {
-            (0xE5, 0x80, 0x00) => 918,
-            (0xE6, 0xC0, 0x00) => 922,
-            (0xE7, 0x40, 0x00) => 925,
-            (0xE8, 0x00, 0x00) => 928,
-            _ => 915,
-        };
-
-        Ok(frequency)
-    }
-
-    /// # Errors
-    pub fn set_radio_frequency(&mut self, frequency: u16) -> Result<(), I2C::Error> {
-        while !(self.transceiver_ready()?) {
-            self.delay.delay_ms(10);
-        }
-        let (msb, mid, lsb) = match frequency {
-            918 => (0xE5, 0x80, 0x00),
-            922 => (0xE6, 0x80, 0x00),
-            925 => (0xE7, 0x40, 0x00),
-            928 => (0xE8, 0x00, 0x00),
-            _ => (0xE4, 0xC0, 0x00),
-        };
+        let hz = frequency.to_Hz() / F_STEP;
 
         self.delay.delay_ms(5);
-        self.set_rfm69_register(RFM69_REG_FRFMSB, msb)?;
+        self.set_rfm69_register(RFM69_REG_FRFMSB, (hz >> 16) as u8)?;
         self.delay.delay_ms(5);
-        self.set_rfm69_register(RFM69_REG_FRFMID, mid)?;
+        self.set_rfm69_register(RFM69_REG_FRFMID, (hz >> 8) as u8)?;
         self.delay.delay_ms(5);
-        self.set_rfm69_register(RFM69_REG_FRFLSB, lsb)?;
+        self.set_rfm69_register(RFM69_REG_FRFLSB, hz as u8)?;
         self.delay.delay_ms(5);
         Ok(())
     }
@@ -299,6 +247,7 @@ mod test {
     use embedded_hal::i2c::ErrorKind;
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use fugit::RateExtU32;
 
     use crate::{Error, P27};
 
@@ -315,9 +264,9 @@ mod test {
             I2cTransaction::write(0x09, vec![0x98, 0x07]),
             I2cTransaction::write(0x09, vec![0x99, 0xE6]),
             I2cTransaction::write(0x09, vec![0x98, 0x08]),
-            I2cTransaction::write(0x09, vec![0x99, 0x80]),
+            I2cTransaction::write(0x09, vec![0x99, 0xA2]),
             I2cTransaction::write(0x09, vec![0x98, 0x09]),
-            I2cTransaction::write(0x09, vec![0x99, 0x00]),
+            I2cTransaction::write(0x09, vec![0x99, 0x02]),
             I2cTransaction::write(0x09, vec![0x98, 0x03]),
             I2cTransaction::write(0x09, vec![0x99, 0x0D]),
             I2cTransaction::write(0x09, vec![0x98, 0x04]),
@@ -341,9 +290,9 @@ mod test {
             I2cTransaction::write(0x09, vec![0x98, 0x07]),
             I2cTransaction::write(0x09, vec![0x99, 0xE5]),
             I2cTransaction::write(0x09, vec![0x98, 0x08]),
-            I2cTransaction::write(0x09, vec![0x99, 0x80]),
+            I2cTransaction::write(0x09, vec![0x99, 0x61]),
             I2cTransaction::write(0x09, vec![0x98, 0x09]),
-            I2cTransaction::write(0x09, vec![0x99, 0x00]),
+            I2cTransaction::write(0x09, vec![0x99, 0xd2]),
         ];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
@@ -353,22 +302,14 @@ mod test {
             delay: MockNoop {},
             address: 0x09,
         };
-        p27.set_radio_frequency(918).unwrap();
+        p27.set_radio_frequency(917u32.MHz()).unwrap();
 
         i2c_clone.done();
     }
 
     #[test]
-    pub fn get_radio_frequency() {
-        let expectations = [
-            I2cTransaction::write_read(0x09, vec![0x25], vec![0x01]),
-            I2cTransaction::write(0x09, vec![0x18, 0x07]),
-            I2cTransaction::write_read(0x09, vec![0x19], vec![0xE7]),
-            I2cTransaction::write(0x09, vec![0x18, 0x08]),
-            I2cTransaction::write_read(0x09, vec![0x19], vec![0x40]),
-            I2cTransaction::write(0x09, vec![0x18, 0x09]),
-            I2cTransaction::write_read(0x09, vec![0x19], vec![0x00]),
-        ];
+    pub fn set_radio_frequency_too_small() {
+        let expectations = [];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
@@ -377,13 +318,35 @@ mod test {
             delay: MockNoop {},
             address: 0x09,
         };
-        p27.get_radio_frequency().unwrap();
+        assert_eq!(
+            p27.set_radio_frequency(889.MHz()),
+            Err(Error::ArgumentError)
+        );
 
         i2c_clone.done();
     }
 
     #[test]
-    pub fn set_speed() {
+    pub fn set_radio_frequency_too_large() {
+        let expectations = [];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: 0x09,
+        };
+        assert_eq!(
+            p27.set_radio_frequency(1021.MHz()),
+            Err(Error::ArgumentError)
+        );
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_bit_rate() {
         let expectations = [
             I2cTransaction::write(0x09, vec![0x98, 0x03]),
             I2cTransaction::write(0x09, vec![0x99, 0x0D]),
@@ -398,19 +361,14 @@ mod test {
             delay: MockNoop {},
             address: 0x09,
         };
-        p27.set_speed(1).unwrap();
+        p27.set_bit_rate(9_600).unwrap();
 
         i2c_clone.done();
     }
 
     #[test]
-    pub fn get_speed() {
-        let expectations = [
-            I2cTransaction::write(0x09, vec![0x18, 0x03]),
-            I2cTransaction::write_read(0x09, vec![0x19], vec![0x00]),
-            I2cTransaction::write(0x09, vec![0x18, 0x04]),
-            I2cTransaction::write_read(0x09, vec![0x19], vec![0x6B]),
-        ];
+    pub fn set_bit_rate_too_large() {
+        let expectations = [];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
@@ -419,7 +377,23 @@ mod test {
             delay: MockNoop {},
             address: 0x09,
         };
-        assert_eq!(p27.get_speed(), Ok(3));
+        assert_eq!(p27.set_bit_rate(u32::MAX), Err(Error::ArgumentError));
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_bit_rate_too_small() {
+        let expectations = [];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: 0x09,
+        };
+        assert_eq!(p27.set_bit_rate(0), Err(Error::ArgumentError));
 
         i2c_clone.done();
     }

@@ -13,6 +13,7 @@ repository.workspace = true
 
 [dependencies]
 embedded-hal.workspace = true
+fugit.workspace = true
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
 cortex-m.workspace = true
@@ -21,7 +22,6 @@ embedded-hal.workspace = true
 defmt.workspace = true
 defmt-rtt.workspace = true
 panic-probe.workspace = true
-fugit.workspace = true
 rp-pico.workspace = true
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
