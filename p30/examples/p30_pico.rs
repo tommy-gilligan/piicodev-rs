@@ -70,18 +70,19 @@ mod arm {
             100_000_000.Hz(),
         );
 
-        info!("light off!");
-        led_pin.set_low().unwrap();
-        delay.delay_ms(500);
         let mut p30 = P30::new(i2c, 0x35).unwrap();
+        p30.set_led(false).unwrap();
+        p30.set_period(10_000).unwrap();
 
         loop {
-            p30.set_led(true).unwrap();
-            delay.delay_ms(500);
-
-            p30.set_address(0x69).unwrap();
-            p30.set_led(false).unwrap();
-            delay.delay_ms(500);
+            if p30.new_sample_available().unwrap() {
+                println!(
+                    "{}ms, {}cm",
+                    p30.round_trip_time().unwrap(),
+                    p30.distance().unwrap().as_centimetres(),
+                )
+            }
+            delay.delay_ms(1000);
         }
     }
 }
