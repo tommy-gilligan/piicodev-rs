@@ -19,6 +19,7 @@ panic-probe = { version = ">=0.3", features = ["print-defmt"] }
 rp-pico = ">=0.7"
 embedded-hal-mock = { git = "https://github.com/dbrgn/embedded-hal-mock.git", branch = "1-alpha" }
 linux-embedded-hal = { git = "https://github.com/tomgilligan/linux-embedded-hal.git" }
+libm = "0.2.6"
 
 # cargo build/run
 [profile.dev]
