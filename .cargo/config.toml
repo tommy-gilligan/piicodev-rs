@@ -21,11 +21,6 @@ rustflags = [
   "-C", "no-vectorize-loops",
 ]
 
-# [build]
-# target = "thumbv6m-none-eabi"
-# 
-# [env]
-# DEFMT_LOG = "debug"
-
 [alias]
 xtask = "run --package xtask --"
+pe = "run --target thumbv6m-none-eabi --example "

@@ -10,16 +10,16 @@ repository = "https://github.com/tomgilligan/piicodev-drivers/"
 [workspace.dependencies]
 cortex-m = ">=0.7"
 cortex-m-rt = ">=0.7"
-defmt = "=0.3.2"
+defmt = ">= 0.3.2"
 defmt-rtt = ">=0.4"
 embedded-hal = "=1.0.0-alpha.10"
 fugit = ">=0.3.6"
-measurements = "0.11"
+measurements = ">=0.11"
 panic-probe = { version = ">=0.3", features = ["print-defmt"] }
-rp-pico = ">=0.7"
+rp-pico = { git = "https://github.com/tomgilligan/rp-hal-boards.git" }
 embedded-hal-mock = { git = "https://github.com/dbrgn/embedded-hal-mock.git", branch = "1-alpha" }
 linux-embedded-hal = { git = "https://github.com/tomgilligan/linux-embedded-hal.git" }
-libm = "0.2.6"
+libm = ">=0.2.6"
 
 # cargo build/run
 [profile.dev]
