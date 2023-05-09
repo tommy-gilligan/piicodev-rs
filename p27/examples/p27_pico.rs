@@ -80,16 +80,13 @@ mod arm {
             100_000_000.Hz(),
         );
 
-        info!("light off!");
-        led_pin.set_low().unwrap();
         delay.delay_ms(500);
         let delay_1 = MyDelay(delay);
         let mut p27 = P27::new(i2c, 0x1A, delay_1).unwrap();
 
-        info!("light on!");
-        led_pin.set_high().unwrap();
+        p27.disable().unwrap();
         loop {
-            p27.send(0, "message".as_bytes()).unwrap();
+            println!("{:?}", p27.enabled().unwrap());
         }
     }
 }
