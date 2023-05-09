@@ -27,7 +27,7 @@ mod arm {
         },
     };
 
-    use p26::P26;
+    use p26::{TapDetection, P26};
 
     #[entry]
     fn main() -> ! {
@@ -68,17 +68,10 @@ mod arm {
         );
 
         let mut p26 = P26::new(i2c, 0x19).unwrap();
+        p26.set_tap(TapDetection::Double, 40, 10, 80, 255).unwrap();
 
         loop {
-            if p26.data_ready().unwrap() {
-                let (x, y, z) = p26.angle().unwrap();
-                println!(
-                    "{:?} {:?} {:?}",
-                    x.as_degrees(),
-                    y.as_degrees(),
-                    z.as_degrees()
-                )
-            }
+            println!("{:?}", p26.tapped().unwrap());
             delay.delay_ms(1000);
         }
     }

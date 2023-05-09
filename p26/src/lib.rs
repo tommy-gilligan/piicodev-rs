@@ -9,8 +9,14 @@ const R_WHOAMI: u8 = 0x0F;
 const DEVICE_ID: u8 = 0x33;
 const OUT_X_L: u8 = 0x28;
 const CTRL_REG_1: u8 = 0x20;
+const CTRL_REG_3: u8 = 0x22;
 const CTRL_REG_4: u8 = 0x23;
+const CTRL_REG_5: u8 = 0x25;
 const STATUS_REG: u8 = 0x27;
+const CLICK_CFG: u8 = 0x38;
+const CLICK_THS: u8 = 0x3A;
+const CLICK_SRC: u8 = 0x39;
+const INT1_SRC: u8 = 0x31;
 
 pub struct P26<I2C> {
     i2c: I2C,
@@ -22,6 +28,12 @@ pub enum Error<E> {
     I2cError(E),
     ArgumentError,
     UnexpectedDevice,
+}
+
+pub enum TapDetection {
+    Disabled = 0x00,
+    Single = 0x15,
+    Double = 0x2A,
 }
 
 impl<E> From<E> for Error<E> {
@@ -139,6 +151,60 @@ impl<I2C: I2c> P26<I2C> {
             )),
         ))
     }
+
+    pub fn set_tap(
+        &mut self,
+        tap: TapDetection,
+        threshold: u8,
+        time_limit: u8,
+        latency: u8,
+        window: u8,
+    ) -> Result<(), Error<I2C::Error>> {
+        if threshold > 127 {
+            return Err(Error::ArgumentError);
+        }
+        let mut data: [u8; 1] = [0; 1];
+        match tap {
+            TapDetection::Disabled => {
+                self.i2c
+                    .write_read(self.address, &[CTRL_REG_3 | 0x80], &mut data)?;
+                self.i2c
+                    .write(self.address, &[CTRL_REG_3, data[0] & 0x7F])?;
+                Ok(self.i2c.write(self.address, &[CLICK_CFG, 0x00])?)
+            }
+            TapDetection::Single | TapDetection::Double => {
+                self.i2c
+                    .write_read(self.address, &[CTRL_REG_3 | 0x80], &mut data)?;
+                self.i2c
+                    .write(self.address, &[CTRL_REG_3, data[0] | 0x80])?;
+                self.i2c.write(self.address, &[CTRL_REG_5, 0x08])?;
+                self.i2c.write(self.address, &[CLICK_CFG, tap as u8])?;
+                Ok(self.i2c.write(
+                    self.address,
+                    &[
+                        CLICK_THS | 0x80,
+                        threshold | 0x80,
+                        time_limit,
+                        latency,
+                        window,
+                    ],
+                )?)
+            }
+        }
+    }
+
+    pub fn tapped(&mut self) -> Result<bool, Error<I2C::Error>> {
+        let mut data: [u8; 1] = [0; 1];
+        self.i2c
+            .write_read(self.address, &[CLICK_SRC | 0x80], &mut data)?;
+        if (data[0] & 0x40) != 0x00 {
+            self.i2c
+                .write_read(self.address, &[INT1_SRC | 0x80], &mut data)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
 }
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
@@ -153,7 +219,7 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use measurements::{Acceleration, Angle, Frequency};
 
-    use crate::{Error, Gravity, P26};
+    use crate::{Error, Gravity, TapDetection, P26};
 
     #[test]
     pub fn new() {
@@ -309,6 +375,104 @@ mod test {
                 Angle::from_radians(-0.008_653_630_137_437_27_f64),
             ))
         );
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_tap() {
+        let expectations = [
+            I2cTransaction::write_read(0x19, vec![0xA2], vec![0x9f]),
+            I2cTransaction::write(0x19, vec![0x22, 0x1f]),
+            I2cTransaction::write(0x19, vec![0x38, 0x00]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p26 = P26 { i2c, address: 0x19 };
+
+        assert_eq!(p26.set_tap(TapDetection::Disabled, 40, 10, 80, 255), Ok(()));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_tap_threshold_too_large() {
+        let expectations = [];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p26 = P26 { i2c, address: 0x19 };
+
+        assert_eq!(
+            p26.set_tap(TapDetection::Disabled, 128, 10, 80, 255),
+            Err(Error::ArgumentError)
+        );
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_tap_single() {
+        let expectations = [
+            I2cTransaction::write_read(0x19, vec![0xA2], vec![0x0]),
+            I2cTransaction::write(0x19, vec![0x22, 0x80]),
+            I2cTransaction::write(0x19, vec![0x25, 0x08]),
+            I2cTransaction::write(0x19, vec![0x38, 0x15]),
+            I2cTransaction::write(0x19, vec![0xBA, 0xFF, 10, 80, 255]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p26 = P26 { i2c, address: 0x19 };
+
+        assert_eq!(p26.set_tap(TapDetection::Single, 127, 10, 80, 255), Ok(()));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_tap_double() {
+        let expectations = [
+            I2cTransaction::write_read(0x19, vec![0xA2], vec![0x0]),
+            I2cTransaction::write(0x19, vec![0x22, 0x80]),
+            I2cTransaction::write(0x19, vec![0x25, 0x08]),
+            I2cTransaction::write(0x19, vec![0x38, 0x2A]),
+            I2cTransaction::write(0x19, vec![0xBA, 0xFF, 15, 60, 200]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p26 = P26 { i2c, address: 0x19 };
+
+        assert_eq!(p26.set_tap(TapDetection::Double, 127, 15, 60, 200), Ok(()));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn tapped_false() {
+        let expectations = [I2cTransaction::write_read(
+            0x19,
+            vec![0x39 | 0x80],
+            vec![0x0],
+        )];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p26 = P26 { i2c, address: 0x19 };
+
+        assert_eq!(p26.tapped(), Ok(false));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn tapped_true() {
+        let expectations = [
+            I2cTransaction::write_read(0x19, vec![0x39 | 0x80], vec![0x44]),
+            I2cTransaction::write_read(0x19, vec![0x31 | 0x80], vec![0xff]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p26 = P26 { i2c, address: 0x19 };
+
+        assert_eq!(p26.tapped(), Ok(true));
         i2c_clone.done();
     }
 }
