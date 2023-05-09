@@ -1,14 +1,35 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![feature(lint_reasons)]
+#![feature(int_roundings)]
 
+use core::cmp;
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
+use measurements::Angle;
 
 pub struct P29<I2C, DELAY> {
     i2c: I2C,
     delay: DELAY,
     address: u8,
+}
+
+const FREQ: u32 = 50;
+const PERIOD: u32 = 1_000_000 / FREQ;
+const MIN_US: u32 = 600;
+const MIN_DUTY: u32 = 4095 * MIN_US.div_ceil(PERIOD);
+const MAX_US: u32 = 2400;
+const MAX_DUTY: u32 = 4095 * MAX_US.div_ceil(PERIOD);
+const DEGREES: f64 = 180.0;
+
+#[must_use]
+pub fn remap(old_val: i16, old_min: i16, old_max: i16, new_min: i16, new_max: i16) -> i16 {
+    let x = (new_max - new_min) * (old_val - old_min) / (old_max - old_min) + new_min;
+    cmp::min(new_max, cmp::max(x, new_min))
+}
+#[must_use]
+pub fn us2duty(value: u16, period: u16) -> u16 {
+    4095 * value / period
 }
 
 impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
@@ -53,19 +74,33 @@ impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
         ))
     }
 
-    pub fn set_pwm(&mut self, servo: u8, on: u16, off: u16) -> Result<(), I2C::Error> {
-        let on_bytes: [u8; 2] = u16::to_le_bytes(on);
-        let off_bytes: [u8; 2] = u16::to_le_bytes(off);
+    pub fn set_pwm(&mut self, channel: u8, on: u16, off: u16) -> Result<(), I2C::Error> {
+        let [msb_on, lsb_on]: [u8; 2] = u16::to_le_bytes(on);
+        let [msb_off, lsb_off]: [u8; 2] = u16::to_le_bytes(off);
         self.i2c.write(
             self.address,
-            &[
-                0x06 + 4 * servo,
-                on_bytes[0],
-                on_bytes[1],
-                off_bytes[0],
-                off_bytes[1],
-            ],
+            &[0x06 + 4 * channel, msb_on, lsb_on, msb_off, lsb_off],
         )
+    }
+
+    pub fn set_speed(&mut self, channel: u8, _x: i16) -> Result<(), I2C::Error> {
+        // let duty = remap(x, -1, 1, 4095 * 600 / (20_000), 4095 * 2400 / (20_000));
+        // let [msb, lsb]: [u8; 2] = i16::to_be_bytes(duty);
+        self.i2c
+            .write(self.address, &[0x06 + 4 * channel, 0, 0, 0xeb, 0x01])
+    }
+
+    pub fn set_angle(&mut self, channel: u8, x: Angle) -> Result<(), I2C::Error> {
+        let duty: f64 =
+            f64::from(MIN_DUTY) + f64::from(MAX_DUTY - MIN_DUTY) * x.as_degrees() / DEGREES;
+        let duty = cmp::min(MAX_DUTY, cmp::max(MIN_DUTY, duty as u32));
+        self.set_duty(channel, duty as u16)?;
+        Ok(())
+    }
+
+    pub fn set_duty(&mut self, channel: u8, value: u16) -> Result<(), I2C::Error> {
+        self.set_pwm(channel, 0, value)?;
+        Ok(())
     }
 }
 
@@ -79,6 +114,7 @@ mod test {
     extern crate embedded_hal_mock;
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use measurements::Angle;
 
     use crate::P29;
 
@@ -197,11 +233,11 @@ mod test {
     #[test]
     pub fn set_frequency() {
         let expectations = [
-            I2cTransaction::write_read(0x44, vec![0x00], vec![0x70]),
-            I2cTransaction::write(0x44, vec![0x00, 0x70]),
+            I2cTransaction::write_read(0x44, vec![0x00], vec![0x00]),
+            I2cTransaction::write(0x44, vec![0x00, 0x10]),
             I2cTransaction::write(0x44, vec![0xfe, 122]),
-            I2cTransaction::write(0x44, vec![0x00, 0x70]),
-            I2cTransaction::write(0x44, vec![0x00, 0xF1]),
+            I2cTransaction::write(0x44, vec![0x00, 0x00]),
+            I2cTransaction::write(0x44, vec![0x00, 161]),
         ];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
@@ -213,6 +249,44 @@ mod test {
         };
 
         p29.set_frequency(50).unwrap();
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_speed() {
+        let expectations = [I2cTransaction::write(
+            0x44,
+            vec![0x12, 0x00, 0x00, 0xeb, 0x01],
+        )];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p29 = P29 {
+            i2c,
+            address: 0x44,
+            delay: MockNoop {},
+        };
+
+        p29.set_speed(3, 1).unwrap();
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_angle() {
+        let expectations = [I2cTransaction::write(
+            0x44,
+            vec![0x12, 0x00, 0x00, 0xff, 0x0f],
+        )];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p29 = P29 {
+            i2c,
+            address: 0x44,
+            delay: MockNoop {},
+        };
+
+        p29.set_angle(3, Angle::from_degrees(20.0)).unwrap();
         i2c_clone.done();
     }
 }
