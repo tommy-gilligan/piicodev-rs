@@ -50,7 +50,7 @@ pub enum Error<E> {
 
 impl<E> From<E> for Error<E> {
     fn from(error: E) -> Self {
-        Error::I2cError(error)
+        Self::I2cError(error)
     }
 }
 
@@ -302,7 +302,7 @@ mod test {
             delay: MockNoop {},
             address: 0x09,
         };
-        p27.set_radio_frequency(917u32.MHz()).unwrap();
+        p27.set_radio_frequency(917_u32.MHz()).unwrap();
 
         i2c_clone.done();
     }

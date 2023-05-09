@@ -342,21 +342,21 @@ mod test {
             coefficient_valid: true,
             // exercises temp < 2000 branch
             eeprom_coefficient: [
-                -23i16 as u16,
-                -23i16 as u16,
-                -23i16 as u16,
-                -23i16 as u16,
-                -23i16 as u16,
-                -23i16 as u16,
-                -23i16 as u16,
+                -23_i16 as u16,
+                -23_i16 as u16,
+                -23_i16 as u16,
+                -23_i16 as u16,
+                -23_i16 as u16,
+                -23_i16 as u16,
+                -23_i16 as u16,
             ],
         };
 
         assert_eq!(
             p11.read_temperature_and_pressure(None).unwrap(),
             (
-                Temperature::from_kelvin(207.91999999999996),
-                Pressure::from_pascals(185262.0),
+                Temperature::from_kelvin(207.919_999_999_999_96),
+                Pressure::from_pascals(185_262.0),
             )
         );
         i2c_clone.done();

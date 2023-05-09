@@ -31,7 +31,7 @@ pub enum Error<E> {
 
 impl<E> From<E> for Error<E> {
     fn from(error: E) -> Self {
-        Error::I2cError(error)
+        Self::I2cError(error)
     }
 }
 
