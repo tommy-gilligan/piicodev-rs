@@ -83,7 +83,7 @@ mod arm {
         info!("light off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
-        let mut delay_1 = MyDelay(delay);
+        let delay_1 = MyDelay(delay);
         let mut p7 = P7::new(i2c, 0x29, delay_1).unwrap();
 
         info!("{:?}", p7.read().unwrap().as_millimetres());

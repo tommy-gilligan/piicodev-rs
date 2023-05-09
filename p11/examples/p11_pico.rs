@@ -83,7 +83,7 @@ mod arm {
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
 
-        let mut delay_1 = MyDelay(delay);
+        let delay_1 = MyDelay(delay);
         let mut p11 = P11::new(i2c, 0x76, delay_1).unwrap();
 
         let temperature_and_pressure = p11.read_temperature_and_pressure(None).unwrap();

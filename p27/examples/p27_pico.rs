@@ -83,13 +83,13 @@ mod arm {
         info!("light off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
-        let mut delay_1 = MyDelay(delay);
+        let delay_1 = MyDelay(delay);
         let mut p27 = P27::new(i2c, 0x1A, delay_1).unwrap();
 
         info!("light on!");
         led_pin.set_high().unwrap();
         loop {
-            p27.send(0, "message".as_bytes());
+            p27.send(0, "message".as_bytes()).unwrap();
         }
     }
 }

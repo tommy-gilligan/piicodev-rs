@@ -16,7 +16,7 @@ mod arm {
     use defmt_rtt as _;
     use embedded_hal::digital::OutputPin;
     use fugit::RateExtU32;
-    use palette::{FromColor, Hsv, IntoColor};
+    use palette::{Hsv, IntoColor};
     use panic_probe as _;
     use rp_pico::{
         entry,

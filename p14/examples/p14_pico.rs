@@ -15,14 +15,10 @@ mod arm {
     use defmt::*;
     use defmt_rtt as _;
     use embedded_graphics::{
-        draw_target::DrawTarget,
-        geometry::{OriginDimensions, Size},
+        geometry::Size,
         pixelcolor::BinaryColor,
         prelude::*,
-        primitives::{
-            Circle, PrimitiveStyle, PrimitiveStyleBuilder, Rectangle, StrokeAlignment, Triangle,
-        },
-        Pixel,
+        primitives::{Circle, PrimitiveStyle, Rectangle},
     };
     use embedded_hal::digital::OutputPin;
     use fugit::RateExtU32;

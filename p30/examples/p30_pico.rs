@@ -14,7 +14,6 @@ mod not_arm {
 mod arm {
     use defmt::*;
     use defmt_rtt as _;
-    use embedded_hal::digital::OutputPin;
     use fugit::RateExtU32;
     use panic_probe as _;
     use rp_pico::{
@@ -58,8 +57,6 @@ mod arm {
             sio.gpio_bank0,
             &mut pac.RESETS,
         );
-
-        let mut led_pin = pins.led.into_push_pull_output();
 
         let i2c = I2C::i2c0(
             pac.I2C0,

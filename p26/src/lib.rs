@@ -7,20 +7,9 @@ use measurements::{Acceleration, Angle, Frequency};
 
 const R_WHOAMI: u8 = 0x0F;
 const DEVICE_ID: u8 = 0x33;
-const I2C_ADDRESS: u8 = 0x19;
 const OUT_X_L: u8 = 0x28;
 const CTRL_REG_1: u8 = 0x20;
-const CTRL_REG_2: u8 = 0x21;
-const CTRL_REG_3: u8 = 0x22;
 const CTRL_REG_4: u8 = 0x23;
-const CTRL_REG_5: u8 = 0x25;
-const INT1_SRC: u8 = 0x31;
-const CLICK_CFG: u8 = 0x38;
-const CLICKSRC: u8 = 0x39;
-const CLICK_THS: u8 = 0x3A;
-const TIME_LIMIT: u8 = 0x3B;
-const TIME_LATENCY: u8 = 0x3C;
-const TIME_WINDOW: u8 = 0x3D;
 const STATUS_REG: u8 = 0x27;
 
 pub struct P26<I2C> {
