@@ -79,7 +79,7 @@ mod arm {
                 println!(
                     "{}ms, {}cm",
                     p30.round_trip_time().unwrap(),
-                    p30.distance().unwrap().as_centimetres(),
+                    p30.length().unwrap().as_centimetres(),
                 )
             }
             delay.delay_ms(1000);

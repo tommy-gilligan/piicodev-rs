@@ -4,7 +4,7 @@
 
 use core::cell::Cell;
 use embedded_hal::i2c::I2c;
-use measurements::Distance;
+use measurements::Length;
 
 pub struct P30<I2C> {
     i2c: I2C,
@@ -21,7 +21,7 @@ pub enum Error<E> {
 
 impl<E> From<E> for Error<E> {
     fn from(error: E) -> Self {
-        Error::I2cError(error)
+        Self::I2cError(error)
     }
 }
 
@@ -52,8 +52,9 @@ impl<I2C: I2c> P30<I2C> {
         Ok(res)
     }
 
-    pub fn distance(&mut self) -> Result<Distance, I2C::Error> {
-        Ok(Distance::from_millimeters(
+    /// Returns the [`Length`] between the ultrasound sensor and the surface of a target.
+    pub fn length(&mut self) -> Result<Length, I2C::Error> {
+        Ok(Length::from_millimeters(
             f64::from(self.round_trip_time()?) * self.millimeters_per_microsecond.get() / 2.0,
         ))
     }
@@ -157,7 +158,7 @@ mod test {
     extern crate embedded_hal_mock;
     use core::cell::Cell;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-    use measurements::Distance;
+    use measurements::Length;
 
     use crate::{Error, P30};
 
@@ -429,7 +430,7 @@ mod test {
     }
 
     #[test]
-    pub fn distance() {
+    pub fn length() {
         let expectations = [I2cTransaction::write_read(
             0x35,
             vec![0x05],
@@ -444,7 +445,7 @@ mod test {
             millimeters_per_microsecond: Cell::new(3.2_f64),
         };
 
-        assert_eq!(p30.distance(), Ok(Distance::from_millimeters(4571.2_f64)));
+        assert_eq!(p30.length(), Ok(Length::from_millimeters(4571.2_f64)));
         i2c_clone.done();
     }
 

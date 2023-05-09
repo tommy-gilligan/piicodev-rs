@@ -1,9 +1,8 @@
 [package]
 name = "p30"
 version = "0.1.0"
-description = "d"
-# should find part number for ultrasonic
-keywords = ["Distance", "Ultrasonic", "Rangefinder", "PiicoDev"]
+description = "Unofficial Rust Driver for PiicoDev Ultrasonic Rangefinder"
+keywords = ["Ultrasonic", "Rangefinder", "PiicoDev", "RCWL-1601", "HC-SR04"]
 authors = [
   "Thomas Gilligan <thomas.gilligan@icloud.com>",
 ]
