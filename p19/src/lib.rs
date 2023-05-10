@@ -4,21 +4,21 @@
 
 use embedded_hal::i2c::I2c;
 
-pub struct P19<I2C> {
-    i2c: I2C,
-    address: u8,
-}
-
-const EE_BACKUP: u8 = 0x37;
-const REG_ID: u8 = 0x28;
-const REG_UNIX: u8 = 0x1B;
 const REG_STATUS: u8 = 0x0E;
+const REG_UNIX: u8 = 0x1B;
+const REG_ID: u8 = 0x28;
+const REG_EEPROM_BACKUP: u8 = 0x37;
 
 pub enum TrickleResistance {
     Resistance3kΩ = 0,
     Resistance5kΩ = 1,
     Resistance9kΩ = 2,
     Resistance15kΩ = 3,
+}
+
+pub struct P19<I2C> {
+    i2c: I2C,
+    address: u8,
 }
 
 impl<I2C: I2c> P19<I2C> {
@@ -33,13 +33,15 @@ impl<I2C: I2c> P19<I2C> {
 
     pub fn set_battery_switchover(&mut self, switchover_enabled: bool) -> Result<(), I2C::Error> {
         let mut data: [u8; 1] = [0];
-        self.i2c.write_read(self.address, &[EE_BACKUP], &mut data)?;
+        self.i2c
+            .write_read(self.address, &[REG_EEPROM_BACKUP], &mut data)?;
         let new_ee_backup = if switchover_enabled {
             (data[0] & 0b11110011) | 0b00000100
         } else {
             data[0] & 0b11110011
         };
-        self.i2c.write(self.address, &[EE_BACKUP, new_ee_backup])?;
+        self.i2c
+            .write(self.address, &[REG_EEPROM_BACKUP, new_ee_backup])?;
 
         Ok(())
     }
@@ -49,11 +51,12 @@ impl<I2C: I2c> P19<I2C> {
         trickle_resistance: TrickleResistance,
     ) -> Result<(), I2C::Error> {
         let mut data: [u8; 1] = [0];
-        self.i2c.write_read(self.address, &[EE_BACKUP], &mut data)?;
+        self.i2c
+            .write_read(self.address, &[REG_EEPROM_BACKUP], &mut data)?;
         self.i2c.write(
             self.address,
             &[
-                EE_BACKUP,
+                REG_EEPROM_BACKUP,
                 ((data[0] | 0x80) & 0b11111100) | (trickle_resistance as u8),
             ],
         )?;
@@ -63,13 +66,15 @@ impl<I2C: I2c> P19<I2C> {
 
     pub fn set_trickle_charger(&mut self, tricker_charger: bool) -> Result<(), I2C::Error> {
         let mut data: [u8; 1] = [0];
-        self.i2c.write_read(self.address, &[EE_BACKUP], &mut data)?;
+        self.i2c
+            .write_read(self.address, &[REG_EEPROM_BACKUP], &mut data)?;
         let new_ee_backup = if tricker_charger {
             data[0] | 0b00100000
         } else {
             data[0] & 0b11011111
         };
-        self.i2c.write(self.address, &[EE_BACKUP, new_ee_backup])?;
+        self.i2c
+            .write(self.address, &[REG_EEPROM_BACKUP, new_ee_backup])?;
 
         Ok(())
     }

@@ -4,11 +4,6 @@
 
 use embedded_hal::i2c::I2c;
 
-pub struct P12<I2C> {
-    i2c: I2C,
-    address: u8,
-}
-
 const MAIN_CONTROL: u8 = 0x00;
 const GENERAL_STATUS: u8 = 0x02;
 const SENSOR_INPUT_STATUS: u8 = 0x03;
@@ -33,6 +28,11 @@ impl<E> From<E> for Error<E> {
     fn from(error: E) -> Self {
         Self::I2cError(error)
     }
+}
+
+pub struct P12<I2C> {
+    i2c: I2C,
+    address: u8,
 }
 
 impl<I2C: I2c> P12<I2C> {

@@ -5,18 +5,18 @@
 use embedded_hal::i2c::I2c;
 use measurements::{Acceleration, Angle, Frequency};
 
-const R_WHOAMI: u8 = 0x0F;
-const DEVICE_ID: u8 = 0x33;
+const REG_WHOAMI: u8 = 0x0F;
+const REG_CONTROL1: u8 = 0x20;
+const REG_CONTROL3: u8 = 0x22;
+const REG_CONTROL4: u8 = 0x23;
+const REG_CONTROL5: u8 = 0x25;
+const REG_STATUS: u8 = 0x27;
 const OUT_X_L: u8 = 0x28;
-const CTRL_REG_1: u8 = 0x20;
-const CTRL_REG_3: u8 = 0x22;
-const CTRL_REG_4: u8 = 0x23;
-const CTRL_REG_5: u8 = 0x25;
-const STATUS_REG: u8 = 0x27;
-const CLICK_CFG: u8 = 0x38;
-const CLICK_THS: u8 = 0x3A;
-const CLICK_SRC: u8 = 0x39;
 const INT1_SRC: u8 = 0x31;
+const CLICK_CFG: u8 = 0x38;
+const CLICK_SRC: u8 = 0x39;
+const CLICK_THS: u8 = 0x3A;
+const DEVICE_ID: u8 = 0x33;
 
 pub struct P26<I2C> {
     i2c: I2C,
@@ -55,8 +55,8 @@ impl<I2C: I2c> P26<I2C> {
             return Err(Error::UnexpectedDevice);
         }
 
-        res.i2c.write(address, &[CTRL_REG_1, 0x07])?;
-        res.i2c.write(address, &[CTRL_REG_4, 0x88])?;
+        res.i2c.write(address, &[REG_CONTROL1, 0x07])?;
+        res.i2c.write(address, &[REG_CONTROL4, 0x88])?;
 
         res.set_range(Gravity::EarthTimes2)?;
         res.set_rate(Frequency::from_hertz(400.0))?;
@@ -66,7 +66,7 @@ impl<I2C: I2c> P26<I2C> {
     pub fn data_ready(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
-            .write_read(self.address, &[0x80 | STATUS_REG], &mut data)?;
+            .write_read(self.address, &[0x80 | REG_STATUS], &mut data)?;
 
         if (data[0] & 0b0000_1000) != 0 {
             Ok(true)
@@ -77,7 +77,8 @@ impl<I2C: I2c> P26<I2C> {
 
     pub fn whoami(&mut self) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
-        self.i2c.write_read(self.address, &[R_WHOAMI], &mut data)?;
+        self.i2c
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
 
         Ok(data[0])
     }
@@ -85,10 +86,10 @@ impl<I2C: I2c> P26<I2C> {
     pub fn set_range(&mut self, range: Gravity) -> Result<(), I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address, &[0x80 | CTRL_REG_4], &mut data)?;
+            .write_read(self.address, &[0x80 | REG_CONTROL4], &mut data)?;
         self.i2c.write(
             self.address,
-            &[CTRL_REG_4, (data[0] & 0b1100_1111) | (range as u8)],
+            &[REG_CONTROL4, (data[0] & 0b1100_1111) | (range as u8)],
         )?;
         Ok(())
     }
@@ -107,9 +108,9 @@ impl<I2C: I2c> P26<I2C> {
         };
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address, &[0x80 | CTRL_REG_1], &mut data)?;
+            .write_read(self.address, &[0x80 | REG_CONTROL1], &mut data)?;
         self.i2c
-            .write(self.address, &[CTRL_REG_1, (data[0] & 0x0f) | rr])?;
+            .write(self.address, &[REG_CONTROL1, (data[0] & 0x0f) | rr])?;
         Ok(())
     }
 
@@ -167,17 +168,17 @@ impl<I2C: I2c> P26<I2C> {
         match tap {
             TapDetection::Disabled => {
                 self.i2c
-                    .write_read(self.address, &[CTRL_REG_3 | 0x80], &mut data)?;
+                    .write_read(self.address, &[REG_CONTROL3 | 0x80], &mut data)?;
                 self.i2c
-                    .write(self.address, &[CTRL_REG_3, data[0] & 0x7F])?;
+                    .write(self.address, &[REG_CONTROL3, data[0] & 0x7F])?;
                 Ok(self.i2c.write(self.address, &[CLICK_CFG, 0x00])?)
             }
             TapDetection::Single | TapDetection::Double => {
                 self.i2c
-                    .write_read(self.address, &[CTRL_REG_3 | 0x80], &mut data)?;
+                    .write_read(self.address, &[REG_CONTROL3 | 0x80], &mut data)?;
                 self.i2c
-                    .write(self.address, &[CTRL_REG_3, data[0] | 0x80])?;
-                self.i2c.write(self.address, &[CTRL_REG_5, 0x08])?;
+                    .write(self.address, &[REG_CONTROL3, data[0] | 0x80])?;
+                self.i2c.write(self.address, &[REG_CONTROL5, 0x08])?;
                 self.i2c.write(self.address, &[CLICK_CFG, tap as u8])?;
                 Ok(self.i2c.write(
                     self.address,

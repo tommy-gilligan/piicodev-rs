@@ -3,25 +3,25 @@
 #![feature(lint_reasons)]
 
 use embedded_hal::i2c::I2c;
+use libm::{atan2, sqrt};
+use measurements::Angle;
+
+const REG_XOUT: u8 = 0x01;
+const REG_YOUT: u8 = 0x03;
+const REG_ZOUT: u8 = 0x05;
+const REG_STATUS: u8 = 0x09;
+const REG_CONTROL1: u8 = 0x0A;
+const REG_CONTROL2: u8 = 0x0B;
+const REG_SIGN: u8 = 0x29;
+
+const CONTROL1_VALUE: u8 = 0b11001101;
+const CONTROL2_VALUE: u8 = 0b00000000;
+const SIGN_VALUE: u8 = 0b00000110;
 
 pub struct P15<I2C> {
     i2c: I2C,
     address: u8,
 }
-
-const ADDRESS_CONTROL1: u8 = 0x0A;
-const CONTROL1_VALUE: u8 = 0b11001101;
-const ADDRESS_CONTROL2: u8 = 0x0B;
-const CONTROL2_VALUE: u8 = 0x00;
-const ADDRESS_SIGN: u8 = 0x29;
-const SIGN_VALUE: u8 = 0b00000110;
-const ADDRESS_STATUS: u8 = 0x09;
-const ADDRESS_XOUT: u8 = 0x01;
-const ADDRESS_YOUT: u8 = 0x03;
-const ADDRESS_ZOUT: u8 = 0x05;
-
-use libm::{atan2, sqrt};
-use measurements::Angle;
 
 impl<I2C: I2c> P15<I2C> {
     pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
@@ -34,20 +34,20 @@ impl<I2C: I2c> P15<I2C> {
 
     fn set_control_register(&mut self) -> Result<(), I2C::Error> {
         self.i2c
-            .write(self.address, &[ADDRESS_CONTROL1, CONTROL1_VALUE])?;
+            .write(self.address, &[REG_CONTROL1, CONTROL1_VALUE])?;
 
         Ok(())
     }
 
     fn set_range(&mut self) -> Result<(), I2C::Error> {
         self.i2c
-            .write(self.address, &[ADDRESS_CONTROL2, CONTROL2_VALUE])?;
+            .write(self.address, &[REG_CONTROL2, CONTROL2_VALUE])?;
 
         Ok(())
     }
 
     fn set_sign(&mut self) -> Result<(), I2C::Error> {
-        self.i2c.write(self.address, &[ADDRESS_SIGN, SIGN_VALUE])?;
+        self.i2c.write(self.address, &[REG_SIGN, SIGN_VALUE])?;
 
         Ok(())
     }
@@ -55,7 +55,7 @@ impl<I2C: I2c> P15<I2C> {
     pub fn data_ready(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
-            .write_read(self.address, &[ADDRESS_STATUS], &mut data)?;
+            .write_read(self.address, &[REG_STATUS], &mut data)?;
         if (data[0] & 0b00000011) == 0x01 {
             Ok(true)
         } else {
@@ -66,13 +66,13 @@ impl<I2C: I2c> P15<I2C> {
     pub fn read(&mut self) -> Result<(f64, f64, f64), I2C::Error> {
         let mut data_x: [u8; 2] = [0, 0];
         self.i2c
-            .write_read(self.address, &[ADDRESS_XOUT], &mut data_x)?;
+            .write_read(self.address, &[REG_XOUT], &mut data_x)?;
         let mut data_y: [u8; 2] = [0, 0];
         self.i2c
-            .write_read(self.address, &[ADDRESS_YOUT], &mut data_y)?;
+            .write_read(self.address, &[REG_YOUT], &mut data_y)?;
         let mut data_z: [u8; 2] = [0, 0];
         self.i2c
-            .write_read(self.address, &[ADDRESS_ZOUT], &mut data_z)?;
+            .write_read(self.address, &[REG_ZOUT], &mut data_z)?;
         Ok((
             i16::from_le_bytes(data_x) as f64 * 0.1f64,
             i16::from_le_bytes(data_y) as f64 * 0.1f64,

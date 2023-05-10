@@ -4,17 +4,17 @@
 
 use embedded_hal::i2c::I2c;
 
-pub struct P22<I2C> {
-    i2c: I2C,
-    address: u8,
-}
-
 const REG_WHOAMI: u8 = 0x01;
 const REG_FIRM_MAJ: u8 = 0x02;
 const REG_FIRM_MIN: u8 = 0x03;
 const REG_POT: u8 = 0x05;
 const REG_LED: u8 = 0x07;
 const REG_SELF_TEST: u8 = 0x09;
+
+pub struct P22<I2C> {
+    i2c: I2C,
+    address: u8,
+}
 
 impl<I2C: I2c> P22<I2C> {
     pub const fn new(i2c: I2C, address: u8) -> Self {

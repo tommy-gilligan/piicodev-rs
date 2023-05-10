@@ -1,18 +1,18 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![feature(lint_reasons)]
-use embedded_hal::delay::DelayUs;
-use embedded_hal::i2c::I2c;
+
+use embedded_hal::{delay::DelayUs, i2c::I2c};
+
+const REG_ALS_CONF: u8 = 0x00;
+const REG_ALS: u8 = 0x04;
+const DEFAULT_SETTINGS: u8 = 0x00;
 
 pub struct P3<I2C, DELAY> {
     i2c: I2C,
     address: u8,
     delay: DELAY,
 }
-
-const ALS_CONF: u8 = 0x00;
-const REG_ALS: u8 = 0x04;
-const DEFAULT_SETTINGS: u8 = 0x00;
 
 impl<I2C: I2c, DELAY: DelayUs> P3<I2C, DELAY> {
     /// # Errors
@@ -22,7 +22,8 @@ impl<I2C: I2c, DELAY: DelayUs> P3<I2C, DELAY> {
             address,
             delay,
         };
-        res.i2c.write(res.address, &[ALS_CONF, DEFAULT_SETTINGS])?;
+        res.i2c
+            .write(res.address, &[REG_ALS_CONF, DEFAULT_SETTINGS])?;
         res.delay.delay_ms(4);
         Ok(res)
     }

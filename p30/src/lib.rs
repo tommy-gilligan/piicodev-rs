@@ -6,6 +6,17 @@ use core::cell::Cell;
 use embedded_hal::i2c::I2c;
 use measurements::Length;
 
+const REG_WHOAMI: u8 = 0x01;
+const REG_FIRM_MAJ: u8 = 0x02;
+const REG_FIRM_MIN: u8 = 0x03;
+const REG_I2C_ADDRESS: u8 = 0x04;
+const REG_RAW: u8 = 0x05;
+const REG_PERIOD: u8 = 0x06;
+const REG_LED: u8 = 0x07;
+const REG_STATUS: u8 = 0x08;
+const REG_SELF_TEST: u8 = 0x09;
+const DEVICE_ID: u16 = 578;
+
 pub struct P30<I2C> {
     i2c: I2C,
     address: u8,
@@ -24,17 +35,6 @@ impl<E> From<E> for Error<E> {
         Self::I2cError(error)
     }
 }
-
-const DEVICE_ID: u16 = 578;
-const REG_STATUS: u8 = 0x08;
-const REG_FIRM_MAJ: u8 = 0x02;
-const REG_FIRM_MIN: u8 = 0x03;
-const REG_I2C_ADDRESS: u8 = 0x04;
-const REG_RAW: u8 = 0x05;
-const REG_PERIOD: u8 = 0x06;
-const REG_LED: u8 = 0x07;
-const REG_SELF_TEST: u8 = 0x09;
-const REG_WHOAMI: u8 = 0x01;
 
 impl<I2C: I2c> P30<I2C> {
     pub fn new(i2c: I2C, address: u8) -> Result<Self, Error<I2C::Error>> {

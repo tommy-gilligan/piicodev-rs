@@ -1,24 +1,17 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![feature(lint_reasons)]
+
 use core::num::TryFromIntError;
-use embedded_hal::delay::DelayUs;
-use embedded_hal::i2c::I2c;
+use embedded_hal::{delay::DelayUs, i2c::I2c};
 use fugit::{Hertz, RateExtU32};
-
-pub struct P27<I2C, DELAY> {
-    i2c: I2C,
-    delay: DELAY,
-    address: u8,
-}
-
-const DEVICE_ID: u16 = 495;
 
 const REG_WHOAMI: u8 = 0x01;
 const REG_FIRM_MAJ: u8 = 0x02;
 const REG_FIRM_MIN: u8 = 0x03;
 const REG_I2C_ADDRESS: u8 = 0x04;
 const REG_LED: u8 = 0x05;
+
 const REG_TX_POWER: u8 = 0x13;
 const REG_RFM69_RADIO_STATE: u8 = 0x14;
 const REG_RFM69_NODE_ID: u8 = 0x15;
@@ -32,15 +25,20 @@ const REG_PAYLOAD: u8 = 0x22;
 const REG_PAYLOAD_NEW: u8 = 0x23;
 const REG_PAYLOAD_GO: u8 = 0x24;
 const REG_TRANSCEIVER_READY: u8 = 0x25;
-
 const RFM69_REG_BITRATEMSB: u8 = 0x03;
 const RFM69_REG_BITRATELSB: u8 = 0x04;
 const RFM69_REG_FRFMSB: u8 = 0x07;
 const RFM69_REG_FRFMID: u8 = 0x08;
 const RFM69_REG_FRFLSB: u8 = 0x09;
-
 const F_STEP: u32 = 61;
 const F_XOSC: u32 = 32_000_000;
+const DEVICE_ID: u16 = 495;
+
+pub struct P27<I2C, DELAY> {
+    i2c: I2C,
+    address: u8,
+    delay: DELAY,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error<E> {

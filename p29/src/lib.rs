@@ -4,15 +4,8 @@
 #![feature(int_roundings)]
 
 use core::cmp;
-use embedded_hal::delay::DelayUs;
-use embedded_hal::i2c::I2c;
+use embedded_hal::{delay::DelayUs, i2c::I2c};
 use measurements::Angle;
-
-pub struct P29<I2C, DELAY> {
-    i2c: I2C,
-    delay: DELAY,
-    address: u8,
-}
 
 const FREQ: u32 = 50;
 const PERIOD: u32 = 1_000_000 / FREQ;
@@ -30,6 +23,12 @@ pub fn remap(old_val: i16, old_min: i16, old_max: i16, new_min: i16, new_max: i1
 #[must_use]
 pub fn us2duty(value: u16, period: u16) -> u16 {
     4095 * value / period
+}
+
+pub struct P29<I2C, DELAY> {
+    i2c: I2C,
+    address: u8,
+    delay: DELAY,
 }
 
 impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {

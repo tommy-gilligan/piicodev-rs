@@ -2,15 +2,8 @@
 #![no_std]
 #![feature(lint_reasons)]
 
-use embedded_hal::delay::DelayUs;
-use embedded_hal::i2c::I2c;
+use embedded_hal::{delay::DelayUs, i2c::I2c};
 use measurements::Length;
-
-pub struct P7<I2C, DELAY> {
-    i2c: I2C,
-    address: u8,
-    delay: DELAY,
-}
 
 const VL51L1X_DEFAULT_CONFIGURATION: [u8; 93] = [
     0x00, 0x2D,
@@ -106,6 +99,12 @@ const VL51L1X_DEFAULT_CONFIGURATION: [u8; 93] = [
     0x01, // 0x86 : clear interrupt, use ClearInterrupt() */
     0x40, // 0x87 : start ranging, use StartRanging() or StopRanging(), If you want an automatic start after VL53L1X_init() call, put 0x40 in location 0x87 */
 ];
+
+pub struct P7<I2C, DELAY> {
+    i2c: I2C,
+    address: u8,
+    delay: DELAY,
+}
 
 impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
     /// # Errors

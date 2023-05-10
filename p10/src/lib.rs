@@ -2,9 +2,19 @@
 #![no_std]
 #![feature(lint_reasons)]
 
-use embedded_hal::delay::DelayUs;
-use embedded_hal::i2c::I2c;
+use embedded_hal::{delay::DelayUs, i2c::I2c};
 use palette::{LinSrgb, SrgbLuma};
+
+const REG_CONF: u8 = 0x00;
+const REG_RED: u8 = 0x08;
+const REG_GREEN: u8 = 0x09;
+const REG_BLUE: u8 = 0x0A;
+const REG_WHITE: u8 = 0x0B;
+// initialise gain:1x, integration 40ms, Green Sensitivity 0.25168, Max. Detectable Lux 16496
+const DEFAULT_SETTINGS: u8 = 0x00;
+// No Trig, Auto mode, enabled.
+// Disable colour sensor
+const SHUTDOWN: u8 = 0x01;
 
 /// Driver for PiicoDev P10
 ///
@@ -14,22 +24,9 @@ use palette::{LinSrgb, SrgbLuma};
 /// 2. Read color information from the instance with [`P10::read`]
 pub struct P10<I2C, DELAY> {
     i2c: I2C,
-    delay: DELAY,
     address: u8,
+    delay: DELAY,
 }
-
-const CONF: u8 = 0x00;
-const REG_RED: u8 = 0x08;
-const REG_GREEN: u8 = 0x09;
-const REG_BLUE: u8 = 0x0A;
-const REG_WHITE: u8 = 0x0B;
-
-// initialise gain:1x, integration 40ms, Green Sensitivity 0.25168, Max. Detectable Lux 16496
-const DEFAULT_SETTINGS: u8 = 0x00;
-
-// No Trig, Auto mode, enabled.
-// Disable colour sensor
-const SHUTDOWN: u8 = 0x01;
 
 impl<I2C: I2c, DELAY: DelayUs> P10<I2C, DELAY> {
     /// Acquire a new P10 driver instance
@@ -47,8 +44,8 @@ impl<I2C: I2c, DELAY: DelayUs> P10<I2C, DELAY> {
             address,
         };
 
-        res.i2c.write(res.address, &[CONF, SHUTDOWN])?;
-        res.i2c.write(res.address, &[CONF, DEFAULT_SETTINGS])?;
+        res.i2c.write(res.address, &[REG_CONF, SHUTDOWN])?;
+        res.i2c.write(res.address, &[REG_CONF, DEFAULT_SETTINGS])?;
         res.delay.delay_ms(50);
 
         Ok(res)

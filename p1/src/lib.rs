@@ -5,6 +5,8 @@
 use embedded_hal::i2c::I2c;
 use measurements::Temperature;
 
+const REG_TEMPC: u8 = 0x0;
+
 /// Driver for PiicoDev P1
 ///
 /// Typical usage:
@@ -15,8 +17,6 @@ pub struct P1<I2C> {
     i2c: I2C,
     address: u8,
 }
-
-const REG_TEMPC: u8 = 0x0;
 
 impl<I2C: I2c> P1<I2C> {
     /// Returns a new P1 driver instance

@@ -1,12 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![feature(lint_reasons)]
-use embedded_hal::i2c::I2c;
 
-pub struct P21<I2C> {
-    i2c: I2C,
-    address: u8,
-}
+use embedded_hal::i2c::I2c;
 
 const REG_WHOAMI: u8 = 0x01;
 const REG_FIRM_MAJ: u8 = 0x02;
@@ -19,6 +15,11 @@ const REG_PRESS_COUNT: u8 = 0x14;
 const REG_DOUBLE_PRESS_DURATION: u8 = 0x21;
 const REG_EMA_SMOOTHING_FACTOR: u8 = 0x22;
 const REG_EMA_PERIOD: u8 = 0x23;
+
+pub struct P21<I2C> {
+    i2c: I2C,
+    address: u8,
+}
 
 impl<I2C: I2c> P21<I2C> {
     pub const fn new(i2c: I2C, address: u8) -> Self {

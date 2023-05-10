@@ -4,6 +4,7 @@
 
 use core::num::TryFromIntError;
 use embedded_hal::i2c::I2c;
+use fugit::{ExtU32, Hertz, MillisDuration, RateExtU32};
 
 const REG_STATUS: u8 = 0x01;
 const REG_FIRM_MAJ: u8 = 0x02;
@@ -11,13 +12,6 @@ const REG_FIRM_MIN: u8 = 0x03;
 const REG_TONE: u8 = 0x05;
 const REG_LED: u8 = 0x07;
 const REG_SELF_TEST: u8 = 0x09;
-
-pub struct P18<I2C> {
-    i2c: I2C,
-    address: u8,
-}
-
-use fugit::{ExtU32, Hertz, MillisDuration, RateExtU32};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error<E> {
@@ -29,6 +23,11 @@ impl<E> From<E> for Error<E> {
     fn from(error: E) -> Self {
         Self::I2cError(error)
     }
+}
+
+pub struct P18<I2C> {
+    i2c: I2C,
+    address: u8,
 }
 
 impl<I2C: I2c> P18<I2C> {

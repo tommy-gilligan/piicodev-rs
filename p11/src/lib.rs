@@ -2,9 +2,25 @@
 #![no_std]
 #![feature(lint_reasons)]
 
-use embedded_hal::delay::DelayUs;
-use embedded_hal::i2c::I2c;
+use embedded_hal::{delay::DelayUs, i2c::I2c};
 use measurements::{Pressure, Temperature};
+
+const REG_ADC: u8 = 0x00;
+const REG_RESET: u8 = 0x1E;
+const REG_PROM: u8 = 0xA0;
+const RESOLUTION_OSR_8192: u8 = 5;
+const MS5637_PRESSURE_SENSITIVITY_INDEX: u8 = 1;
+const MS5637_PRESSURE_OFFSET_INDEX: u8 = 2;
+const MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX: u8 = 3;
+const MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX: u8 = 4;
+const MS5637_REFERENCE_TEMPERATURE_INDEX: u8 = 5;
+const MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX: u8 = 6;
+const MS5637_CONV_TIME_OSR_256: u32 = 1;
+const MS5637_CONV_TIME_OSR_512: u32 = 2;
+const MS5637_CONV_TIME_OSR_1024: u32 = 3;
+const MS5637_CONV_TIME_OSR_2048: u32 = 5;
+const MS5637_CONV_TIME_OSR_4096: u32 = 9;
+const MS5637_CONV_TIME_OSR_8192: u32 = 17;
 
 pub struct P11<I2C, DELAY> {
     i2c: I2C,
@@ -13,53 +29,6 @@ pub struct P11<I2C, DELAY> {
     coefficient_valid: bool,
     eeprom_coefficient: [u16; 7],
 }
-
-const ADC_READ: u8 = 0x00;
-const SOFT_RESET: u8 = 0x1E;
-
-const MS5637_PROM_ADDR_0: u8 = 0xA0;
-const MS5637_PROM_ADDR_1: u8 = 0xA2;
-const MS5637_PROM_ADDR_2: u8 = 0xA4;
-const MS5637_PROM_ADDR_3: u8 = 0xA6;
-const MS5637_PROM_ADDR_4: u8 = 0xA8;
-const MS5637_PROM_ADDR_5: u8 = 0xAA;
-const MS5637_PROM_ADDR_6: u8 = 0xAC;
-
-const MS5637_START_TEMPERATURE_ADC_CONVERSION: u8 = 0x50;
-const MS5637_START_PRESSURE_ADC_CONVERSION: u8 = 0x40;
-const MS5637_CONVERSION_OSR_MASK: u8 = 0x0F;
-
-#[expect(dead_code)]
-const RESOLUTION_OSR_256: u8 = 0;
-#[expect(dead_code)]
-const RESOLUTION_OSR_512: u8 = 1;
-#[expect(dead_code)]
-const RESOLUTION_OSR_1024: u8 = 2;
-#[expect(dead_code)]
-const RESOLUTION_OSR_2048: u8 = 3;
-#[expect(dead_code)]
-const RESOLUTION_OSR_4096: u8 = 4;
-const RESOLUTION_OSR_8192: u8 = 5;
-
-const MS5637_PRESSURE_SENSITIVITY_INDEX: u8 = 1;
-const MS5637_PRESSURE_OFFSET_INDEX: u8 = 2;
-const MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX: u8 = 3;
-const MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX: u8 = 4;
-const MS5637_REFERENCE_TEMPERATURE_INDEX: u8 = 5;
-const MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX: u8 = 6;
-
-// 0.001
-const MS5637_CONV_TIME_OSR_256: u32 = 1;
-// 0.002
-const MS5637_CONV_TIME_OSR_512: u32 = 2;
-// 0.003
-const MS5637_CONV_TIME_OSR_1024: u32 = 3;
-// 0.005
-const MS5637_CONV_TIME_OSR_2048: u32 = 5;
-// 0.009
-const MS5637_CONV_TIME_OSR_4096: u32 = 9;
-// 0.017
-const MS5637_CONV_TIME_OSR_8192: u32 = 17;
 
 const fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
     let time: [u32; 6] = [
@@ -70,10 +39,10 @@ const fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
         MS5637_CONV_TIME_OSR_4096,
         MS5637_CONV_TIME_OSR_8192,
     ];
-    let cmd_temp: u8 = (res * 2) | MS5637_START_TEMPERATURE_ADC_CONVERSION;
-    let time_temp: u32 = time[((cmd_temp & MS5637_CONVERSION_OSR_MASK) / 2) as usize];
-    let cmd_pressure: u8 = (res * 2) | MS5637_START_PRESSURE_ADC_CONVERSION;
-    let time_pressure: u32 = time[((cmd_temp & MS5637_CONVERSION_OSR_MASK) / 2) as usize];
+    let cmd_temp: u8 = (res * 2) | 0b01010000;
+    let time_temp: u32 = time[((cmd_temp & 0x0F) / 2) as usize];
+    let cmd_pressure: u8 = (res * 2) | 0b01000000;
+    let time_pressure: u32 = time[((cmd_temp & 0x0F) / 2) as usize];
 
     (cmd_temp, cmd_pressure, time_temp, time_pressure)
 }
@@ -88,39 +57,22 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
             coefficient_valid: false,
             eeprom_coefficient: [0; 7],
         };
-        res.i2c.write(res.address, &[SOFT_RESET])?;
+        res.i2c.write(res.address, &[REG_RESET])?;
         res.delay.delay_ms(15);
         Ok(res)
     }
 
     /// # Errors
-    fn read_eeprom_coefficient(&mut self, reg: u8) -> Result<u16, I2C::Error> {
-        let mut data: [u8; 2] = [0, 0];
-        self.i2c.write_read(self.address, &[reg], &mut data)?;
-        Ok(u16::from_be_bytes(data))
-    }
-
-    /// # Errors
     fn read_eeprom(&mut self) -> Result<[u16; 7], I2C::Error> {
-        let mut coefficients: [u16; 7] = [0; 7];
-
-        for (a, i) in [
-            MS5637_PROM_ADDR_0,
-            MS5637_PROM_ADDR_1,
-            MS5637_PROM_ADDR_2,
-            MS5637_PROM_ADDR_3,
-            MS5637_PROM_ADDR_4,
-            MS5637_PROM_ADDR_5,
-            MS5637_PROM_ADDR_6,
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            coefficients[a] = self.read_eeprom_coefficient(i)?;
+        let mut data: [u8; 14] = [0; 14];
+        let mut res: [u16; 7] = [0; 7];
+        self.i2c.write_read(self.address, &[REG_PROM], &mut data)?;
+        for (i, a) in data.chunks_exact(2).enumerate() {
+            res[i] = u16::from_be_bytes([a[0], a[1]])
         }
 
         self.coefficient_valid = true;
-        Ok(coefficients)
+        Ok(res)
     }
 
     /// # Errors
@@ -129,7 +81,7 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
         self.delay.delay_ms(time);
         let mut data: [u8; 3] = [0; 3];
         // cheat checking error for now
-        self.i2c.write_read(self.address, &[ADC_READ], &mut data)?;
+        self.i2c.write_read(self.address, &[REG_ADC], &mut data)?;
         Ok(u32::from_be_bytes([0x00, data[0], data[1], data[2]]))
     }
 
@@ -233,15 +185,13 @@ mod test {
 
     #[test]
     pub fn read_eeprom() {
-        let expectations = [
-            I2cTransaction::write_read(0x76, vec![0xA0], vec![0x02, 0x01]),
-            I2cTransaction::write_read(0x76, vec![0xA2], vec![0x03, 0x02]),
-            I2cTransaction::write_read(0x76, vec![0xA4], vec![0x04, 0x03]),
-            I2cTransaction::write_read(0x76, vec![0xA6], vec![0x05, 0x04]),
-            I2cTransaction::write_read(0x76, vec![0xA8], vec![0x06, 0x05]),
-            I2cTransaction::write_read(0x76, vec![0xAA], vec![0x07, 0x06]),
-            I2cTransaction::write_read(0x76, vec![0xAC], vec![0x08, 0x07]),
-        ];
+        let expectations = [I2cTransaction::write_read(
+            0x76,
+            vec![0xA0],
+            vec![
+                0x02, 0x01, 0x03, 0x02, 0x04, 0x03, 0x05, 0x04, 0x06, 0x05, 0x07, 0x06, 0x08, 0x07,
+            ],
+        )];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
@@ -289,13 +239,14 @@ mod test {
     #[test]
     pub fn read_temperature_and_pressure_no_coefficients() {
         let expectations = [
-            I2cTransaction::write_read(0x76, vec![0xA0], vec![0x02, 0x01]),
-            I2cTransaction::write_read(0x76, vec![0xA2], vec![0x03, 0x02]),
-            I2cTransaction::write_read(0x76, vec![0xA4], vec![0x04, 0x03]),
-            I2cTransaction::write_read(0x76, vec![0xA6], vec![0x05, 0x04]),
-            I2cTransaction::write_read(0x76, vec![0xA8], vec![0x06, 0x05]),
-            I2cTransaction::write_read(0x76, vec![0xAA], vec![0x07, 0x06]),
-            I2cTransaction::write_read(0x76, vec![0xAC], vec![0x08, 0x07]),
+            I2cTransaction::write_read(
+                0x76,
+                vec![0xA0],
+                vec![
+                    0x02, 0x01, 0x03, 0x02, 0x04, 0x03, 0x05, 0x04, 0x06, 0x05, 0x07, 0x06, 0x08,
+                    0x07,
+                ],
+            ),
             I2cTransaction::write(0x76, vec![90]),
             I2cTransaction::write_read(0x76, vec![0x00], vec![0xF0, 0x00, 0x00]),
             I2cTransaction::write(0x76, vec![74]),

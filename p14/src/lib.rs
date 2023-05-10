@@ -1,70 +1,71 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 #![feature(lint_reasons)]
-use embedded_graphics::prelude::OriginDimensions;
-use embedded_graphics::Pixel;
-use embedded_graphics::{draw_target::DrawTarget, geometry::Size, pixelcolor::BinaryColor};
+
+use embedded_graphics::{
+    draw_target::DrawTarget, geometry::Size, pixelcolor::BinaryColor, prelude::OriginDimensions,
+    Pixel,
+};
 use embedded_hal::i2c::I2c;
 
-const SET_CONTRAST: u8 = 0x81;
-const SET_ENTIRE_ON: u8 = 0xA4;
-const SET_NORM_INV: u8 = 0xA6;
-const SET_DISP: u8 = 0xAE;
-const SET_MEM_ADDR: u8 = 0x20;
 const SET_COL_ADDR: u8 = 0x21;
 const SET_PAGE_ADDR: u8 = 0x22;
-const SET_DISP_START_LINE: u8 = 0x40;
-const SET_SEG_REMAP: u8 = 0xA0;
-const SET_MUX_RATIO: u8 = 0xA8;
-const SET_IREF_SELECT: u8 = 0xAD;
-const SET_COM_OUT_DIR: u8 = 0xC0;
-const SET_DISP_OFFSET: u8 = 0xD3;
-const SET_COM_PIN_CFG: u8 = 0xDA;
-const SET_DISP_CLK_DIV: u8 = 0xD5;
-const SET_PRECHARGE: u8 = 0xD9;
-const SET_VCOM_DESEL: u8 = 0xDB;
-const SET_CHARGE_PUMP: u8 = 0x8D;
-
 const WIDTH: u8 = 128;
 const HEIGHT: u8 = 64;
 const PAGES: u8 = HEIGHT / 8;
 const BUFFER_SIZE: usize = PAGES as usize * WIDTH as usize;
+const INIT_COMMANDS: [u8; 27] = [
+    // set disp
+    0xAE,
+    // set mem addr
+    0x20,
+    0x00,
+    // set disp start line
+    0x40,
+    // set seg mremap
+    0xA0 | 0x01,
+    // set mux ratio
+    0xA8,
+    (HEIGHT - 1),
+    // set com out dir
+    0xC0 | 0x08,
+    // set disp offset
+    0xD3,
+    0x00,
+    // set com pin cfg
+    0xDA,
+    0x12,
+    // set disp clk div
+    0xD5,
+    0x80,
+    // set precharge
+    0xD9,
+    0xF1,
+    // set vcom desel
+    0xDB,
+    0x30,
+    // set contrast
+    0x81,
+    0xFF,
+    // set entire on
+    0xA4,
+    // set norm inv
+    0xA6,
+    // set iref select
+    0xAD,
+    0x30,
+    // set charge pump
+    0x8D,
+    0x14,
+    // set disp
+    0xAE | 0x01,
+];
 
 pub struct P14<I2C> {
     i2c: I2C,
     address: u8,
     framebuffer: [u8; BUFFER_SIZE],
 }
-
-const INIT_COMMANDS: [u8; 27] = [
-    SET_DISP,
-    SET_MEM_ADDR,
-    0x00,
-    SET_DISP_START_LINE,
-    SET_SEG_REMAP | 0x01,
-    SET_MUX_RATIO,
-    (HEIGHT - 1),
-    SET_COM_OUT_DIR | 0x08,
-    SET_DISP_OFFSET,
-    0x00,
-    SET_COM_PIN_CFG,
-    0x12,
-    SET_DISP_CLK_DIV,
-    0x80,
-    SET_PRECHARGE,
-    0xF1,
-    SET_VCOM_DESEL,
-    0x30,
-    SET_CONTRAST,
-    0xFF,
-    SET_ENTIRE_ON,
-    SET_NORM_INV,
-    SET_IREF_SELECT,
-    0x30,
-    SET_CHARGE_PUMP,
-    0x14,
-    SET_DISP | 0x01,
-];
 
 impl<I2C: I2c> P14<I2C> {
     /// # Errors
