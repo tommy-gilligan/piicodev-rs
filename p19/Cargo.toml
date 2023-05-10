@@ -13,8 +13,6 @@ repository.workspace = true
 
 [dependencies]
 embedded-hal.workspace = true
-measurements.workspace = true
-chrono.workspace = true
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
 cortex-m.workspace = true
