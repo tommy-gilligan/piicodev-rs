@@ -20,6 +20,7 @@ rp-pico = { git = "https://github.com/tomgilligan/rp-hal-boards.git" }
 embedded-hal-mock = { git = "https://github.com/dbrgn/embedded-hal-mock.git", branch = "1-alpha" }
 linux-embedded-hal = { git = "https://github.com/tomgilligan/linux-embedded-hal.git" }
 libm = ">=0.2.6"
+chrono = { version = ">=0.4.24", default-features = false }
 
 # cargo build/run
 [profile.dev]
