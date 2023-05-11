@@ -1,12 +1,82 @@
 #![no_std]
 #![no_main]
 
-#[cfg(not(all(target_arch = "arm", target_os = "none")))]
-mod not_arm {
+mod linux {
     extern crate std;
+
+    use linux_embedded_hal::{Delay, I2cdev};
+    use p14::P14;
+    use std::env;
+    use std::fs;
+    use std::path;
+
+    use embedded_graphics::{
+        geometry::Size,
+        pixelcolor::BinaryColor,
+        prelude::*,
+        primitives::{Circle, PrimitiveStyle, Rectangle},
+    };
+
+    use crate::linux::path::PathBuf;
+
+    fn path_for_bus(needle: u8) -> Option<path::PathBuf> {
+        for dir_entry in fs::read_dir("/sys/class/i2c-dev").unwrap() {
+            let dir_entry = dir_entry.unwrap();
+            let file_name = dir_entry.file_name();
+            let file_str = file_name.to_str().unwrap();
+            let number: u8 = file_str.strip_prefix("i2c-").unwrap().parse().unwrap();
+            let path = PathBuf::from("/dev");
+
+            let path = path.join(dir_entry.path().file_name().unwrap());
+            let _metadata = path.metadata().unwrap().file_type();
+            if number == needle {
+                return Some(path);
+            }
+        }
+        None
+    }
+
     #[no_mangle]
     pub extern "C" fn main() {
-        std::println!("unsupported target");
+        // handles only as decimal but should accept hexadecimal
+        let mut args = env::args().skip(1);
+        let i2c_bus: u8 = args.next().unwrap().parse().unwrap();
+        let i2c_address: u8 = args
+            .next()
+            .unwrap()
+            .parse()
+            .expect("Error: Chip address is not a number!");
+        if !(0x03..=0x77).contains(&i2c_address) {
+            panic!("Error: Chip address out of range (0x03-0x77)!");
+        }
+
+        let i2c = I2cdev::new(path_for_bus(i2c_bus).unwrap()).unwrap();
+        let mut p14 = P14::new(i2c, i2c_address).unwrap();
+        let _delay = Delay;
+
+        let fill = PrimitiveStyle::with_fill(BinaryColor::On);
+        let thick_stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 3);
+        Rectangle::new(Point::new(8, 8), Size::new(8, 8))
+            .into_styled(fill)
+            .draw(&mut p14)
+            .unwrap();
+        Circle::new(Point::new(32, 1), 62)
+            .into_styled(thick_stroke)
+            .draw(&mut p14)
+            .unwrap();
+        p14.show().unwrap();
+    }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "none")))]
+mod other {
+    extern crate std;
+    use std::println;
+    #[no_mangle]
+    pub extern "C" fn main() {
+        loop {
+            println!("unsupported target");
+        }
     }
 }
 

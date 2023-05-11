@@ -23,6 +23,11 @@ defmt-rtt.workspace = true
 panic-probe.workspace = true
 fugit.workspace = true
 rp-pico.workspace = true
+chrono.workspace = true
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
 embedded-hal-mock.workspace = true
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+linux-embedded-hal.workspace = true
+chrono.workspace = true

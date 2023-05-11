@@ -26,3 +26,6 @@ rp-pico.workspace = true
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
 embedded-hal-mock.workspace = true
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+linux-embedded-hal.workspace = true
