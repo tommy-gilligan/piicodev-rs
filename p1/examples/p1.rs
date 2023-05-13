@@ -1,9 +1,22 @@
 #![no_std]
 #![no_main]
 
+#[cfg(not(any(target_os = "linux", target_os = "none")))]
+mod other {
+    extern crate std;
+    use std::println;
+    #[no_mangle]
+    pub extern "C" fn main() {
+        loop {
+            println!("unsupported target");
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
 mod linux {
     extern crate std;
-    use embedded_hal::delay::DelayUs;
+    use embedded_hal::{delay::DelayUs, i2c::I2c};
     use linux_embedded_hal::{Delay, I2cdev};
     use p1::P1;
     use std::env;
@@ -30,8 +43,7 @@ mod linux {
         None
     }
 
-    #[no_mangle]
-    pub extern "C" fn main() {
+    fn arguments() -> (u8, u8) {
         // handles only as decimal but should accept hexadecimal
         let mut args = env::args().skip(1);
         let i2c_bus: u8 = args.next().unwrap().parse().unwrap();
@@ -44,9 +56,27 @@ mod linux {
             panic!("Error: Chip address out of range (0x03-0x77)!");
         }
 
-        let i2c = I2cdev::new(path_for_bus(i2c_bus).unwrap()).unwrap();
+        (i2c_bus, i2c_address)
+    }
+
+    #[no_mangle]
+    pub extern "C" fn main() {
+        let (i2c_bus, i2c_address) = arguments();
+
+        example(
+            I2cdev::new(path_for_bus(i2c_bus).unwrap()).unwrap(),
+            i2c_address,
+            Delay,
+        )
+        .unwrap()
+    }
+
+    fn example<I2C: I2c, DELAY: DelayUs>(
+        i2c: I2C,
+        i2c_address: u8,
+        mut delay: DELAY,
+    ) -> Result<(), I2C::Error> {
         let mut p1 = P1::new(i2c, i2c_address);
-        let mut delay = Delay;
 
         loop {
             println!("{:?}", p1.read().unwrap().as_celsius());
@@ -55,23 +85,11 @@ mod linux {
     }
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "none")))]
-mod other {
-    extern crate std;
-    use std::println;
-    #[no_mangle]
-    pub extern "C" fn main() {
-        loop {
-            println!("unsupported target");
-        }
-    }
-}
-
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 mod arm {
     use defmt::*;
     use defmt_rtt as _;
-    use embedded_hal::digital::OutputPin;
+    use embedded_hal::delay::DelayUs;
     use fugit::RateExtU32;
     use panic_probe as _;
     use rp_pico::{
@@ -85,7 +103,16 @@ mod arm {
         },
     };
 
-    use p1::P1;
+    use crate::example;
+
+    #[derive(Debug, PartialEq)]
+    struct MyDelayError;
+    struct MyDelay(cortex_m::delay::Delay);
+    impl DelayUs for MyDelay {
+        fn delay_us(&mut self, s: u32) -> () {
+            self.0.delay_us(s);
+        }
+    }
 
     #[entry]
     fn main() -> ! {
@@ -107,16 +134,12 @@ mod arm {
         .ok()
         .unwrap();
 
-        let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
-
         let pins = rp_pico::Pins::new(
             pac.IO_BANK0,
             pac.PADS_BANK0,
             sio.gpio_bank0,
             &mut pac.RESETS,
         );
-
-        let mut led_pin = pins.led.into_push_pull_output();
 
         let i2c = I2C::i2c0(
             pac.I2C0,
@@ -127,19 +150,15 @@ mod arm {
             100_000_000.Hz(),
         );
 
-        info!("light off!");
-        led_pin.set_low().unwrap();
-        delay.delay_ms(500);
-        let mut p1 = P1::new(i2c, 0x48);
-
-        loop {
-            info!("{:?}", p1.read().unwrap().as_celsius());
-            info!("light on!");
-            led_pin.set_high().unwrap();
-            delay.delay_ms(500);
-            info!("light off!");
-            led_pin.set_low().unwrap();
-            delay.delay_ms(500);
-        }
+        example(
+            i2c,
+            0x48,
+            MyDelay(cortex_m::delay::Delay::new(
+                core.SYST,
+                clocks.system_clock.freq().to_Hz(),
+            )),
+        )
+        .unwrap();
+        loop {}
     }
 }
