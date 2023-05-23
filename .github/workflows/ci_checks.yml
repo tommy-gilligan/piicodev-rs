@@ -28,6 +28,13 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-linting-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - uses: DavidAnson/markdownlint-cli2-action@v10
+        with:
+          command: fix
+          globs: |
+            p*/**/*.md
+            xtask/**/*.md
+            README.md
       - run: cargo clippy --examples --lib --tests --allow-dirty --fix --all-targets --all-features -- -W clippy::nursery -A clippy::suboptimal_flops -W clippy::pedantic -A clippy::cast_sign_loss -A clippy::float_cmp -A clippy::module_name_repetitions -A clippy::missing_errors_doc -A clippy::cast_possible_wrap -A clippy::similar_names -A clippy::cast_possible_truncation -A clippy::cast_precision_loss -A clippy::missing-panics-doc -W clippy::alloc_instead_of_core -W clippy::dbg_macro -W clippy::decimal_literal_representation -W clippy::default_numeric_fallback -W clippy::empty_structs_with_brackets -W clippy::fn_to_numeric_cast_any -W clippy::get_unwrap -W clippy::impl_trait_in_params -W clippy::lossy_float_literal -W clippy::mixed_read_write_in_expression -W clippy::mod_module_files -W clippy::multiple_inherent_impl -W clippy::multiple_unsafe_ops_per_block -W clippy::mutex_atomic -W clippy::panic -W clippy::panic_in_result_fn -W clippy::print_stderr -W clippy::rest_pat_in_fully_bound_structs -W clippy::same_name_method -W clippy::semicolon_outside_block -W clippy::shadow_reuse -W clippy::shadow_unrelated -W clippy::std_instead_of_core -W clippy::str_to_string -W clippy::string_to_string -W clippy::suspicious_xor_used_as_pow -W clippy::try_err -W clippy::undocumented_unsafe_blocks -W clippy::unneeded_field_pattern -W clippy::unseparated_literal_suffix -W clippy::unwrap-in-result -W rustdoc::bare_urls -W rustdoc::broken_intra_doc_links -W rustdoc::invalid_codeblock_attributes -W rustdoc::invalid_html_tags -W rustdoc::missing_crate_level_docs -W rustdoc::missing_doc_code_examples -W rustdoc::private_doc_tests -W rustdoc::private_intra_doc_links
   testing:
     name: Testing
