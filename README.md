@@ -1,8 +1,12 @@
 # Unofficial Rust Drivers for PiicoDev
 
-> PiicoDev hardware [from Core Electronics] has been designed from the ground-up with rapid prototyping and maker education in mind.
+> PiicoDev hardware [from Core Electronics] has been designed from the
+> ground-up with rapid prototyping and maker education in mind.
 
-[Core Electronics](https://core-electronics.com.au) already provides [excellent MicroPython support](https://github.com/CoreElectronics).  There is no official Rust support however.  This repository provides _unofficial_ Rust drivers for PiicoDev hardware.
+[Core Electronics](https://core-electronics.com.au) already provides [excellent
+MicroPython support](https://github.com/CoreElectronics).  There is no official
+Rust support however.  This repository provides _unofficial_ Rust drivers for
+PiicoDev hardware.
 
 ## Supported Devices
 
