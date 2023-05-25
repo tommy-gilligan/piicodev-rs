@@ -13,7 +13,7 @@ repository.workspace = true
 
 [dependencies]
 embedded-hal.workspace = true
-mfrc522 = { git="https://gitlab.com/tomgilligan/rfid-rs.git", features=["eh1"], branch="communication_refactor" }
+mfrc522 = { version="0.6.0", features=["eh1"] }
 
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
