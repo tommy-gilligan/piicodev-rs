@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+#[cfg(target_os = "linux")]
 mod linux {
     extern crate std;
     use linux_embedded_hal::I2cdev;
