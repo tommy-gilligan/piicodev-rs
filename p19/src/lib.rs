@@ -92,9 +92,8 @@ impl<I2C: I2c> P19<I2C> {
     }
 
     pub fn set_unix_time(&mut self, unix_time: u32) -> Result<(), I2C::Error> {
-        let unix_time: [u8; 4] = u32::to_le_bytes(unix_time);
         let mut data: [u8; 5] = [REG_UNIX; 5];
-        for (i, b) in unix_time.into_iter().enumerate() {
+        for (i, b) in u32::to_le_bytes(unix_time).into_iter().enumerate() {
             data[i + 1] = b;
         }
         self.i2c.write(self.address, &data)?;

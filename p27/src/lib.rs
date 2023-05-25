@@ -256,10 +256,10 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         let mut data: [u8; 1] = [0];
         self.i2c
             .write_read(self.address, &[REG_RFM69_RADIO_STATE], &mut data)?;
-        if data[0] != 0 {
-            Ok(true)
-        } else {
+        if data[0] == 0 {
             Ok(false)
+        } else {
+            Ok(true)
         }
     }
 

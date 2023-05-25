@@ -4,6 +4,7 @@
 #[cfg(target_os = "linux")]
 mod linux {
     extern crate std;
+    use embedded_hal::delay::DelayUs;
     use linux_embedded_hal::{Delay, I2cdev};
     use p11::P11;
     use std::env;

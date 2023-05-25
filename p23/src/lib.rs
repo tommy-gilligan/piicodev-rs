@@ -64,16 +64,18 @@ impl<I2C: I2c> P23<I2C> {
     }
 
     pub fn set_temperature(&mut self, temperature: Temperature) -> Result<(), I2C::Error> {
-        let temperature: [u8; 2] = i16::to_le_bytes((temperature.as_kelvin() * 64.0) as i16);
-        self.i2c
-            .write(self.address, &[REG_TEMP_IN, temperature[0], temperature[1]])?;
+        let temperature_a: [u8; 2] = i16::to_le_bytes((temperature.as_kelvin() * 64.0) as i16);
+        self.i2c.write(
+            self.address,
+            &[REG_TEMP_IN, temperature_a[0], temperature_a[1]],
+        )?;
         Ok(())
     }
 
     pub fn set_humidity(&mut self, humidity: Humidity) -> Result<(), I2C::Error> {
-        let humidity: [u8; 2] = i16::to_le_bytes((humidity.as_percent() * 512.0) as i16);
+        let humidity_a: [u8; 2] = i16::to_le_bytes((humidity.as_percent() * 512.0) as i16);
         self.i2c
-            .write(self.address, &[REG_RH_IN, humidity[0], humidity[1]])?;
+            .write(self.address, &[REG_RH_IN, humidity_a[0], humidity_a[1]])?;
         Ok(())
     }
 

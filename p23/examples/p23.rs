@@ -1,6 +1,18 @@
 #![no_std]
 #![no_main]
 
+#[cfg(target_os = "linux")]
+mod linux {
+    extern crate std;
+    use embedded_hal::delay::DelayUs;
+    use linux_embedded_hal::{Delay, I2cdev};
+
+    #[no_mangle]
+    pub extern "C" fn main() {
+        loop {}
+    }
+}
+
 #[cfg(not(any(target_os = "linux", target_os = "none")))]
 mod other {
     extern crate std;

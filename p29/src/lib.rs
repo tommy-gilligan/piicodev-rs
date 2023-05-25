@@ -21,7 +21,7 @@ pub fn remap(old_val: i16, old_min: i16, old_max: i16, new_min: i16, new_max: i1
     cmp::min(new_max, cmp::max(x, new_min))
 }
 #[must_use]
-pub fn us2duty(value: u16, period: u16) -> u16 {
+pub const fn us2duty(value: u16, period: u16) -> u16 {
     4095 * value / period
 }
 
@@ -90,9 +90,10 @@ impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
     }
 
     pub fn set_angle(&mut self, channel: u8, x: Angle) -> Result<(), I2C::Error> {
-        let duty: f64 =
-            f64::from(MIN_DUTY) + f64::from(MAX_DUTY - MIN_DUTY) * x.as_degrees() / DEGREES;
-        let duty = cmp::min(MAX_DUTY, cmp::max(MIN_DUTY, duty as u32));
+        let duty = ((f64::from(MIN_DUTY)
+            + f64::from(MAX_DUTY - MIN_DUTY) * x.as_degrees() / DEGREES)
+            as u32)
+            .clamp(MIN_DUTY, MAX_DUTY);
         self.set_duty(channel, duty as u16)?;
         Ok(())
     }

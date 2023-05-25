@@ -68,10 +68,10 @@ impl<I2C: I2c> P26<I2C> {
         self.i2c
             .write_read(self.address, &[0x80 | REG_STATUS], &mut data)?;
 
-        if (data[0] & 0b0000_1000) != 0 {
-            Ok(true)
-        } else {
+        if (data[0] & 0b0000_1000) == 0 {
             Ok(false)
+        } else {
+            Ok(true)
         }
     }
 
@@ -198,12 +198,12 @@ impl<I2C: I2c> P26<I2C> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
             .write_read(self.address, &[CLICK_SRC | 0x80], &mut data)?;
-        if (data[0] & 0x40) != 0x00 {
+        if (data[0] & 0x40) == 0x00 {
+            Ok(false)
+        } else {
             self.i2c
                 .write_read(self.address, &[INT1_SRC | 0x80], &mut data)?;
             Ok(true)
-        } else {
-            Ok(false)
         }
     }
 }

@@ -174,6 +174,7 @@ extern crate std;
 mod test {
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
+
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::P21;
