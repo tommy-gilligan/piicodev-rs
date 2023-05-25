@@ -30,8 +30,9 @@ jobs:
           key: ${{ runner.os }}-linting-cargo-${{ hashFiles('**/Cargo.toml') }}
       - uses: DavidAnson/markdownlint-cli2-action@v10
         with:
-          command: fix
+          command: config
           globs: |
+            .markdownlint.yaml
             p*/**/*.md
             xtask/**/*.md
             README.md
