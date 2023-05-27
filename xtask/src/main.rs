@@ -1,5 +1,10 @@
+use core::time::Duration;
+use glob::glob;
+use http::Uri;
 use markdown::mdast::{Definition, Heading, Text};
+use reqwest::blocking::ClientBuilder;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
 use std::string::String;
@@ -53,13 +58,72 @@ fn text(node: &Heading) -> Option<String> {
     }
 }
 
+fn uris() -> HashSet<Uri> {
+    let mut res: HashSet<Uri> = HashSet::new();
+    let excluded_hosts: HashSet<&str> = HashSet::from(["docs.rs", "doc.rust-lang.org"]);
+    for file in glob("target/doc/**/*.html")
+        .expect("Failed to read glob pattern")
+        .filter(|file| file.is_ok())
+    {
+        let binding = std::fs::read_to_string(file.unwrap()).unwrap();
+        let dom = tl::parse(&binding, tl::ParserOptions::default()).unwrap();
+        let parser = dom.parser();
+        let a_elements = dom.query_selector("a[href]").unwrap();
+
+        for url in a_elements
+            .map(|a_element| {
+                a_element
+                    .get(parser)
+                    .unwrap()
+                    .as_tag()
+                    .unwrap()
+                    .attributes()
+                    .get("href")
+                    .unwrap()
+                    .unwrap()
+                    .as_utf8_str()
+                    .into_owned()
+            })
+            .filter_map(|u| u.parse::<Uri>().ok())
+            .filter(|u| u.scheme().is_some())
+            .filter(|u| !excluded_hosts.contains(u.host().unwrap()))
+        {
+            res.insert(url);
+        }
+    }
+    res
+}
+
 fn main() {
     let cmd = clap::Command::new("xtask")
         .bin_name("xtask")
         .subcommand_required(true)
-        .subcommand(clap::command!("ci"));
+        .subcommand(clap::command!("ci"))
+        .subcommand(clap::command!("check-links"));
     let matches = cmd.get_matches();
     match matches.subcommand() {
+        Some(("check-links", _)) => {
+            let seconds = Duration::new(10, 0);
+            let client = ClientBuilder::new()
+                .cookie_store(true)
+                .gzip(true)
+                .brotli(true)
+                .deflate(true)
+                .timeout(seconds)
+                .connect_timeout(seconds)
+                .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15")
+                .build().unwrap();
+            for uri in uris() {
+                match client.head(uri.to_string()).send() {
+                    Ok(res) => {
+                        if !res.status().is_success() {
+                            println!("{:?} {:?}", uri, res.status());
+                        }
+                    }
+                    _ => println!("{:?}", uri),
+                }
+            }
+        }
         Some(("ci", _)) => {
             let metadata = MetadataCommand::new()
                 .manifest_path("./Cargo.toml")
