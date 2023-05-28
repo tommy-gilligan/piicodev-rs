@@ -94,7 +94,7 @@ impl<I2C: I2c> P23<I2C> {
         let mut data: [u8; 6] = [0; 6];
         self.i2c
             .write_read(self.address, &[REG_DEVICE_STATUS], &mut data)?;
-        if (data[0] & 0b00000010) == 0x02 {
+        if (data[0] & 0b0000_0010) == 0x02 {
             Ok(true)
         } else {
             Ok(false)
@@ -191,7 +191,7 @@ mod test {
             Ok(AirQuality {
                 aqi: 0x34,
                 tvoc: 0x7856,
-                eco2: -17254i16
+                eco2: -17254_i16
             })
         );
 

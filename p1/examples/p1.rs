@@ -28,16 +28,16 @@ mod linux {
 
     fn path_for_bus(needle: u8) -> Option<path::PathBuf> {
         for dir_entry in fs::read_dir("/sys/class/i2c-dev").unwrap() {
-            let dir_entry = dir_entry.unwrap();
-            let file_name = dir_entry.file_name();
+            let dir_entry_e = dir_entry.unwrap();
+            let file_name = dir_entry_e.file_name();
             let file_str = file_name.to_str().unwrap();
             let number: u8 = file_str.strip_prefix("i2c-").unwrap().parse().unwrap();
             let path = PathBuf::from("/dev");
 
-            let path = path.join(dir_entry.path().file_name().unwrap());
-            let _metadata = path.metadata().unwrap().file_type();
+            let path_e = path.join(dir_entry_e.path().file_name().unwrap());
+            let _metadata = path_e.metadata().unwrap().file_type();
             if number == needle {
-                return Some(path);
+                return Some(path_e);
             }
         }
         None
@@ -52,9 +52,10 @@ mod linux {
             .unwrap()
             .parse()
             .expect("Error: Chip address is not a number!");
-        if !(0x03..=0x77).contains(&i2c_address) {
-            panic!("Error: Chip address out of range (0x03-0x77)!");
-        }
+        assert!(
+            (0x03..=0x77).contains(&i2c_address),
+            "Error: Chip address out of range (0x03-0x77)!"
+        );
 
         (i2c_bus, i2c_address)
     }
@@ -68,7 +69,7 @@ mod linux {
             i2c_address,
             Delay,
         )
-        .unwrap()
+        .unwrap();
     }
 
     fn example<I2C: I2c, DELAY: DelayUs>(

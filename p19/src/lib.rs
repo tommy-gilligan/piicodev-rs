@@ -36,9 +36,9 @@ impl<I2C: I2c> P19<I2C> {
         self.i2c
             .write_read(self.address, &[REG_EEPROM_BACKUP], &mut data)?;
         let new_ee_backup = if switchover_enabled {
-            (data[0] & 0b11110011) | 0b00000100
+            (data[0] & 0b1111_0011) | 0b0000_0100
         } else {
-            data[0] & 0b11110011
+            data[0] & 0b1111_0011
         };
         self.i2c
             .write(self.address, &[REG_EEPROM_BACKUP, new_ee_backup])?;
@@ -57,7 +57,7 @@ impl<I2C: I2c> P19<I2C> {
             self.address,
             &[
                 REG_EEPROM_BACKUP,
-                ((data[0] | 0x80) & 0b11111100) | (trickle_resistance as u8),
+                ((data[0] | 0x80) & 0b1111_1100) | (trickle_resistance as u8),
             ],
         )?;
 
@@ -69,9 +69,9 @@ impl<I2C: I2c> P19<I2C> {
         self.i2c
             .write_read(self.address, &[REG_EEPROM_BACKUP], &mut data)?;
         let new_ee_backup = if tricker_charger {
-            data[0] | 0b00100000
+            data[0] | 0b0010_0000
         } else {
-            data[0] & 0b11011111
+            data[0] & 0b1101_1111
         };
         self.i2c
             .write(self.address, &[REG_EEPROM_BACKUP, new_ee_backup])?;
@@ -105,11 +105,11 @@ impl<I2C: I2c> P19<I2C> {
         let mut data: [u8; 1] = [0];
         self.i2c
             .write_read(self.address, &[REG_STATUS], &mut data)?;
-        if (data[0] & 0b00000100) == 0 {
+        if (data[0] & 0b0000_0100) == 0 {
             Ok(false)
         } else {
             self.i2c
-                .write(self.address, &[REG_STATUS, data[0] & 0b11111011])?;
+                .write(self.address, &[REG_STATUS, data[0] & 0b1111_1011])?;
             Ok(true)
         }
     }
@@ -248,7 +248,7 @@ mod test {
 
         let mut p19 = P19 { i2c, address: 0x52 };
 
-        assert_eq!(p19.get_unix_time(), Ok(1683514112));
+        assert_eq!(p19.get_unix_time(), Ok(1_683_514_112));
         i2c_clone.done();
     }
 
@@ -263,15 +263,15 @@ mod test {
 
         let mut p19 = P19 { i2c, address: 0x52 };
 
-        assert_eq!(p19.set_unix_time(1683514112), Ok(()));
+        assert_eq!(p19.set_unix_time(1_683_514_112), Ok(()));
         i2c_clone.done();
     }
 
     #[test]
     pub fn check_alarm_true() {
         let expectations = [
-            I2cTransaction::write_read(0x52, vec![0x0E], vec![0b00110100]),
-            I2cTransaction::write(0x52, vec![0x0E, 0b00110000]),
+            I2cTransaction::write_read(0x52, vec![0x0E], vec![0b0011_0100]),
+            I2cTransaction::write(0x52, vec![0x0E, 0b0011_0000]),
         ];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
@@ -287,7 +287,7 @@ mod test {
         let expectations = [I2cTransaction::write_read(
             0x52,
             vec![0x0E],
-            vec![0b00110000],
+            vec![0b0011_0000],
         )];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();

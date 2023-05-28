@@ -98,7 +98,7 @@ impl<I2C: I2c> P2<I2C> {
                 temperature_data[1],
                 temperature_data[2],
             ]) >> 4_i32,
-        ) / 100)
+        ) / 100_i32)
     }
 
     pub fn pascal(&mut self) -> Result<u32, I2C::Error> {
@@ -108,7 +108,7 @@ impl<I2C: I2c> P2<I2C> {
 
         Ok(self.compensate_p(
             i32::from_be_bytes([0, pressure_data[0], pressure_data[1], pressure_data[2]]) >> 4_i32,
-        ) / 256)
+        ) / 256_u32)
     }
 
     pub fn relative(&mut self) -> Result<u32, I2C::Error> {
@@ -121,7 +121,7 @@ impl<I2C: I2c> P2<I2C> {
             0,
             humidity_data[0],
             humidity_data[1],
-        ])) / 1024)
+        ])) / 1024_u32)
     }
 
     pub fn read_raw(&mut self) -> Result<(), I2C::Error> {

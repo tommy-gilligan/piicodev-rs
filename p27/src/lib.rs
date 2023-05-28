@@ -58,8 +58,8 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, Error<I2C::Error>> {
         let mut res = Self {
             i2c,
-            delay,
             address,
+            delay,
         };
 
         res.set_led(true)?;

@@ -45,9 +45,10 @@ mod linux {
             .unwrap()
             .parse()
             .expect("Error: Chip address is not a number!");
-        if !(0x03..=0x77).contains(&i2c_address) {
-            panic!("Error: Chip address out of range (0x03-0x77)!");
-        }
+        assert!(
+            (0x03..=0x77).contains(&i2c_address),
+            "Error: Chip address out of range (0x03-0x77)!"
+        );
 
         let i2c = I2cdev::new(path_for_bus(i2c_bus).unwrap()).unwrap();
         let mut p22 = P22::new(i2c, i2c_address);

@@ -58,12 +58,14 @@ fn text(node: &Heading) -> Option<String> {
     }
 }
 
+#[allow(clippy::mutable_key_type)]
 fn uris() -> HashSet<Uri> {
+    #[allow(clippy::mutable_key_type)]
     let mut res: HashSet<Uri> = HashSet::new();
     let excluded_hosts: HashSet<&str> = HashSet::from(["docs.rs", "doc.rust-lang.org"]);
     for file in glob("target/doc/**/*.html")
         .expect("Failed to read glob pattern")
-        .filter(|file| file.is_ok())
+        .filter(core::result::Result::is_ok)
     {
         let binding = std::fs::read_to_string(file.unwrap()).unwrap();
         let dom = tl::parse(&binding, tl::ParserOptions::default()).unwrap();
@@ -94,6 +96,29 @@ fn uris() -> HashSet<Uri> {
     res
 }
 
+fn check_links() {
+    let seconds = Duration::new(10, 0);
+    let client = ClientBuilder::new()
+        .cookie_store(true)
+        .gzip(true)
+        .brotli(true)
+        .deflate(true)
+        .timeout(seconds)
+        .connect_timeout(seconds)
+        .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15")
+        .build().unwrap();
+    for uri in uris() {
+        client.head(uri.to_string()).send().map_or_else(
+            |_| println!("{uri:?}"),
+            |res| {
+                if !res.status().is_success() {
+                    println!("{:?} {:?}", uri, res.status());
+                }
+            },
+        );
+    }
+}
+
 fn main() {
     let cmd = clap::Command::new("xtask")
         .bin_name("xtask")
@@ -102,28 +127,7 @@ fn main() {
         .subcommand(clap::command!("check-links"));
     let matches = cmd.get_matches();
     match matches.subcommand() {
-        Some(("check-links", _)) => {
-            let seconds = Duration::new(10, 0);
-            let client = ClientBuilder::new()
-                .cookie_store(true)
-                .gzip(true)
-                .brotli(true)
-                .deflate(true)
-                .timeout(seconds)
-                .connect_timeout(seconds)
-                .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15")
-                .build().unwrap();
-            for uri in uris() {
-                match client.head(uri.to_string()).send() {
-                    Ok(res) => {
-                        if !res.status().is_success() {
-                            println!("{:?} {:?}", uri, res.status());
-                        }
-                    }
-                    _ => println!("{:?}", uri),
-                }
-            }
-        }
+        Some(("check-links", _)) => check_links(),
         Some(("ci", _)) => {
             let metadata = MetadataCommand::new()
                 .manifest_path("./Cargo.toml")

@@ -14,9 +14,9 @@ const REG_CONTROL1: u8 = 0x0A;
 const REG_CONTROL2: u8 = 0x0B;
 const REG_SIGN: u8 = 0x29;
 
-const CONTROL1_VALUE: u8 = 0b11001101;
-const CONTROL2_VALUE: u8 = 0b00000000;
-const SIGN_VALUE: u8 = 0b00000110;
+const CONTROL1_VALUE: u8 = 0b1100_1101;
+const CONTROL2_VALUE: u8 = 0b0000_0000;
+const SIGN_VALUE: u8 = 0b0000_0110;
 
 pub struct P15<I2C> {
     i2c: I2C,
@@ -56,7 +56,7 @@ impl<I2C: I2c> P15<I2C> {
         let mut data: [u8; 1] = [0];
         self.i2c
             .write_read(self.address, &[REG_STATUS], &mut data)?;
-        if (data[0] & 0b00000011) == 0x01 {
+        if (data[0] & 0b0000_0011) == 0x01 {
             Ok(true)
         } else {
             Ok(false)
@@ -74,9 +74,9 @@ impl<I2C: I2c> P15<I2C> {
         self.i2c
             .write_read(self.address, &[REG_ZOUT], &mut data_z)?;
         Ok((
-            i16::from_le_bytes(data_x) as f64 * 0.1f64,
-            i16::from_le_bytes(data_y) as f64 * 0.1f64,
-            i16::from_le_bytes(data_z) as f64 * 0.1f64,
+            f64::from(i16::from_le_bytes(data_x)) * 0.1_f64,
+            f64::from(i16::from_le_bytes(data_y)) * 0.1_f64,
+            f64::from(i16::from_le_bytes(data_z)) * 0.1_f64,
         ))
     }
 
@@ -106,7 +106,7 @@ mod test {
 
     #[test]
     pub fn set_control_register() {
-        let expectations = [I2cTransaction::write(0x1C, vec![0x0A, 0b11001101])];
+        let expectations = [I2cTransaction::write(0x1C, vec![0x0A, 0b1100_1101])];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
@@ -145,7 +145,7 @@ mod test {
         let expectations = [
             I2cTransaction::write(0x1C, vec![0x29, 0x06]),
             I2cTransaction::write(0x1C, vec![0x0B, 0x00]),
-            I2cTransaction::write(0x1C, vec![0x0A, 0b11001101]),
+            I2cTransaction::write(0x1C, vec![0x0A, 0b1100_1101]),
         ];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
@@ -204,7 +204,11 @@ mod test {
         let mut p15 = P15 { i2c, address: 0x1C };
         assert_eq!(
             p15.read(),
-            Ok((27.200000000000003f64, -54.5f64, 81.60000000000001f64))
+            Ok((
+                27.200_000_000_000_003_f64,
+                -54.5_f64,
+                81.600_000_000_000_01_f64
+            ))
         );
 
         i2c_clone.done();
@@ -221,7 +225,10 @@ mod test {
         let mut i2c_clone = i2c.clone();
 
         let mut p15 = P15 { i2c, address: 0x1C };
-        assert_eq!(p15.read_angle(), Ok(Angle::from_degrees(26.52298379879782)));
+        assert_eq!(
+            p15.read_angle(),
+            Ok(Angle::from_degrees(26.522_983_798_797_82))
+        );
 
         i2c_clone.done();
     }
@@ -237,7 +244,7 @@ mod test {
         let mut i2c_clone = i2c.clone();
 
         let mut p15 = P15 { i2c, address: 0x1C };
-        assert_eq!(p15.read_magnitude(), Ok(101.82656824228145));
+        assert_eq!(p15.read_magnitude(), Ok(101.826_568_242_281_45_f64));
 
         i2c_clone.done();
     }

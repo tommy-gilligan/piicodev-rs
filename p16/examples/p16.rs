@@ -4,52 +4,9 @@
 #[cfg(target_os = "linux")]
 mod linux {
     extern crate std;
-    use embedded_hal::delay::DelayUs;
-    use linux_embedded_hal::{Delay, I2cdev};
-    use p16::P16;
-    use std::env;
-    use std::fs;
-    use std::path;
-    use std::println;
-
-    use crate::linux::path::PathBuf;
-
-    fn path_for_bus(needle: u8) -> Option<path::PathBuf> {
-        for dir_entry in fs::read_dir("/sys/class/i2c-dev").unwrap() {
-            let dir_entry = dir_entry.unwrap();
-            let file_name = dir_entry.file_name();
-            let file_str = file_name.to_str().unwrap();
-            let number: u8 = file_str.strip_prefix("i2c-").unwrap().parse().unwrap();
-            let path = PathBuf::from("/dev");
-
-            let path = path.join(dir_entry.path().file_name().unwrap());
-            let _metadata = path.metadata().unwrap().file_type();
-            if number == needle {
-                return Some(path);
-            }
-        }
-        None
-    }
 
     #[no_mangle]
-    pub extern "C" fn main() {
-        // handles only as decimal but should accept hexadecimal
-        let mut args = env::args().skip(1);
-        let i2c_bus: u8 = args.next().unwrap().parse().unwrap();
-        let i2c_address: u8 = args
-            .next()
-            .unwrap()
-            .parse()
-            .expect("Error: Chip address is not a number!");
-        if !(0x03..=0x77).contains(&i2c_address) {
-            panic!("Error: Chip address out of range (0x03-0x77)!");
-        }
-
-        let i2c = I2cdev::new(path_for_bus(i2c_bus).unwrap()).unwrap();
-        let mut p16 = P16::new(i2c, i2c_address).unwrap();
-
-        loop {}
-    }
+    pub const extern "C" fn main() {}
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "none")))]
