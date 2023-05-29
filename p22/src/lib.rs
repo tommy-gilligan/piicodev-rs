@@ -56,6 +56,7 @@ impl<I2C: I2c> P22<I2C> {
         Ok((maj_data[0], min_data[0]))
     }
 
+    // slide 0x019B 411 knob 0x017B 379
     pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
@@ -100,6 +101,30 @@ mod test {
         let mut p22 = P22::new(i2c, 0x35);
 
         assert_eq!(p22.read(), Ok(61453));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn self_test_ok() {
+        let expectations = [I2cTransaction::write_read(0x35, vec![0x09], vec![0x01])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p22 = P22::new(i2c, 0x35);
+
+        assert_eq!(p22.self_test(), Ok(true));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn self_test_not_ok() {
+        let expectations = [I2cTransaction::write_read(0x35, vec![0x09], vec![0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p22 = P22::new(i2c, 0x35);
+
+        assert_eq!(p22.self_test(), Ok(false));
         i2c_clone.done();
     }
 
@@ -179,30 +204,6 @@ mod test {
         let mut p22 = P22::new(i2c, 0x35);
 
         assert_eq!(p22.firmware(), Ok((0x01, 0x02)));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn self_test_ok() {
-        let expectations = [I2cTransaction::write_read(0x35, vec![0x09], vec![0x01])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p22 = P22::new(i2c, 0x35);
-
-        assert_eq!(p22.self_test(), Ok(true));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn self_test_not_ok() {
-        let expectations = [I2cTransaction::write_read(0x35, vec![0x09], vec![0x00])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p22 = P22::new(i2c, 0x35);
-
-        assert_eq!(p22.self_test(), Ok(false));
         i2c_clone.done();
     }
 }

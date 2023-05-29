@@ -119,6 +119,7 @@ impl<I2C: I2c> P30<I2C> {
         Ok((maj_data[0], min_data[0]))
     }
 
+    // 0x0242 578
     pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
@@ -161,109 +162,6 @@ mod test {
     use measurements::Length;
 
     use crate::{Error, P30};
-
-    #[test]
-    pub fn set_led_on() {
-        let expectations = [I2cTransaction::write(0x35, vec![0x87, 0x01])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p30 = P30 {
-            i2c,
-            address: 0x35,
-            millimeters_per_microsecond: Cell::new(3.2_f64),
-        };
-
-        assert_eq!(p30.set_led(true), Ok(()));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn set_led_off() {
-        let expectations = [I2cTransaction::write(0x35, vec![0x87, 0x00])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p30 = P30 {
-            i2c,
-            address: 0x35,
-            millimeters_per_microsecond: Cell::new(3.2_f64),
-        };
-
-        assert_eq!(p30.set_led(false), Ok(()));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn get_led_off() {
-        let expectations = [I2cTransaction::write_read(0x35, vec![0x07], vec![0x00])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p30 = P30 {
-            i2c,
-            address: 0x35,
-            millimeters_per_microsecond: Cell::new(3.2_f64),
-        };
-
-        assert_eq!(p30.get_led(), Ok(false));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn get_led_on() {
-        let expectations = [I2cTransaction::write_read(0x35, vec![0x07], vec![0x01])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p30 = P30 {
-            i2c,
-            address: 0x35,
-            millimeters_per_microsecond: Cell::new(3.2_f64),
-        };
-
-        assert_eq!(p30.get_led(), Ok(true));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(
-            0x35,
-            vec![0x01],
-            vec![0x01, 0x10],
-        )];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p30 = P30 {
-            i2c,
-            address: 0x35,
-            millimeters_per_microsecond: Cell::new(3.2_f64),
-        };
-
-        assert_eq!(p30.whoami(), Ok(0x0110));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn firmware() {
-        let expectations = [
-            I2cTransaction::write_read(0x35, vec![0x02], vec![0x01]),
-            I2cTransaction::write_read(0x35, vec![0x03], vec![0x02]),
-        ];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p30 = P30 {
-            i2c,
-            address: 0x35,
-            millimeters_per_microsecond: Cell::new(3.2_f64),
-        };
-
-        assert_eq!(p30.firmware(), Ok((0x01, 0x02)));
-        i2c_clone.done();
-    }
 
     #[test]
     pub fn self_test_ok() {
@@ -494,6 +392,109 @@ mod test {
         };
         assert_eq!(p30.set_address(0x78), Err(Error::ArgumentError));
 
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_led_on() {
+        let expectations = [I2cTransaction::write(0x35, vec![0x87, 0x01])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+
+        assert_eq!(p30.set_led(true), Ok(()));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_led_off() {
+        let expectations = [I2cTransaction::write(0x35, vec![0x87, 0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+
+        assert_eq!(p30.set_led(false), Ok(()));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn get_led_off() {
+        let expectations = [I2cTransaction::write_read(0x35, vec![0x07], vec![0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+
+        assert_eq!(p30.get_led(), Ok(false));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn get_led_on() {
+        let expectations = [I2cTransaction::write_read(0x35, vec![0x07], vec![0x01])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+
+        assert_eq!(p30.get_led(), Ok(true));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn whoami() {
+        let expectations = [I2cTransaction::write_read(
+            0x35,
+            vec![0x01],
+            vec![0x01, 0x10],
+        )];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+
+        assert_eq!(p30.whoami(), Ok(0x0110));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn firmware() {
+        let expectations = [
+            I2cTransaction::write_read(0x35, vec![0x02], vec![0x01]),
+            I2cTransaction::write_read(0x35, vec![0x03], vec![0x02]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p30 = P30 {
+            i2c,
+            address: 0x35,
+            millimeters_per_microsecond: Cell::new(3.2_f64),
+        };
+
+        assert_eq!(p30.firmware(), Ok((0x01, 0x02)));
         i2c_clone.done();
     }
 }

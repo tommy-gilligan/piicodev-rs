@@ -149,6 +149,7 @@ impl<I2C: I2c> P21<I2C> {
         Ok((major_data[0], minor_data[0]))
     }
 
+    // 0x0199 409
     /// # Errors
     pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
@@ -200,85 +201,6 @@ mod test {
         let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.is_pressed(), Ok(false));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn get_led_off() {
-        let expectations = [I2cTransaction::write_read(0x10, vec![0x05], vec![0x00])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p21 = P21::new(i2c, 0x10);
-
-        assert_eq!(p21.get_led(), Ok(false));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn get_led_on() {
-        let expectations = [I2cTransaction::write_read(0x10, vec![0x05], vec![0x01])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p21 = P21::new(i2c, 0x10);
-
-        assert_eq!(p21.get_led(), Ok(true));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn set_led_on() {
-        let expectations = [I2cTransaction::write(0x10, vec![0x85, 0x01])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p21 = P21::new(i2c, 0x10);
-
-        p21.set_led(true).unwrap();
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn set_led_off() {
-        let expectations = [I2cTransaction::write(0x10, vec![0x85, 0x00])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p21 = P21::new(i2c, 0x10);
-
-        p21.set_led(false).unwrap();
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn firmware() {
-        let expectations = [
-            I2cTransaction::write_read(0x10, vec![0x02], vec![0x31]),
-            I2cTransaction::write_read(0x10, vec![0x03], vec![0x52]),
-        ];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p21 = P21::new(i2c, 0x10);
-
-        assert_eq!(p21.firmware(), Ok((0x31, 0x52)));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(
-            0x10,
-            vec![0x01],
-            vec![0x01, 0x99],
-        )];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p21 = P21::new(i2c, 0x10);
-
-        assert_eq!(p21.whoami(), Ok(0x0199));
         i2c_clone.done();
     }
 
@@ -419,6 +341,85 @@ mod test {
         let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.was_pressed(), Ok(false));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn get_led_off() {
+        let expectations = [I2cTransaction::write_read(0x10, vec![0x05], vec![0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p21 = P21::new(i2c, 0x10);
+
+        assert_eq!(p21.get_led(), Ok(false));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn get_led_on() {
+        let expectations = [I2cTransaction::write_read(0x10, vec![0x05], vec![0x01])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p21 = P21::new(i2c, 0x10);
+
+        assert_eq!(p21.get_led(), Ok(true));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_led_on() {
+        let expectations = [I2cTransaction::write(0x10, vec![0x85, 0x01])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p21 = P21::new(i2c, 0x10);
+
+        p21.set_led(true).unwrap();
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_led_off() {
+        let expectations = [I2cTransaction::write(0x10, vec![0x85, 0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p21 = P21::new(i2c, 0x10);
+
+        p21.set_led(false).unwrap();
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn firmware() {
+        let expectations = [
+            I2cTransaction::write_read(0x10, vec![0x02], vec![0x31]),
+            I2cTransaction::write_read(0x10, vec![0x03], vec![0x52]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p21 = P21::new(i2c, 0x10);
+
+        assert_eq!(p21.firmware(), Ok((0x31, 0x52)));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn whoami() {
+        let expectations = [I2cTransaction::write_read(
+            0x10,
+            vec![0x01],
+            vec![0x01, 0x99],
+        )];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p21 = P21::new(i2c, 0x10);
+
+        assert_eq!(p21.whoami(), Ok(0x0199));
         i2c_clone.done();
     }
 }

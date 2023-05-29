@@ -12,6 +12,7 @@ const REG_FIRM_MIN: u8 = 0x03;
 const REG_TONE: u8 = 0x05;
 const REG_LED: u8 = 0x07;
 const REG_SELF_TEST: u8 = 0x09;
+const REG_WHOAMI: u8 = 0x11;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error<E> {
@@ -76,6 +77,7 @@ impl<I2C: I2c> P18<I2C> {
         Ok(data[0])
     }
 
+    // broken
     pub fn get_led(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c.write_read(self.address, &[REG_LED], &mut data)?;
@@ -85,12 +87,11 @@ impl<I2C: I2c> P18<I2C> {
             Ok(true)
         }
     }
-
     pub fn set_led(&mut self, on: bool) -> Result<(), I2C::Error> {
         if on {
-            self.i2c.write(self.address, &[REG_LED | 0x80, 1])?;
+            self.i2c.write(self.address, &[REG_LED, 1])?;
         } else {
-            self.i2c.write(self.address, &[REG_LED | 0x80, 0])?;
+            self.i2c.write(self.address, &[REG_LED, 0])?;
         }
         Ok(())
     }
@@ -105,12 +106,13 @@ impl<I2C: I2c> P18<I2C> {
         Ok((maj_data[0], min_data[0]))
     }
 
-    // pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
-    //     let mut data: [u8; 2] = [0; 2];
-    //     self.i2c
-    //         .write_read(self.address as u8, &[REG_WHOAMI], &mut data)?;
-    //     Ok(u16::from_be_bytes(data))
-    // }
+    // 0x0051 81
+    pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
+        let mut data: [u8; 1] = [0; 1];
+        self.i2c
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
+        Ok(u16::from_be_bytes([0, data[0]]))
+    }
 
     pub fn self_test(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
@@ -199,8 +201,32 @@ mod test {
     }
 
     #[test]
+    pub fn self_test_ok() {
+        let expectations = [I2cTransaction::write_read(0x5C, vec![0x09], vec![0x01])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p18 = P18::new(i2c, 0x5C);
+
+        assert_eq!(p18.self_test(), Ok(true));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn self_test_not_ok() {
+        let expectations = [I2cTransaction::write_read(0x5C, vec![0x09], vec![0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p18 = P18::new(i2c, 0x5C);
+
+        assert_eq!(p18.self_test(), Ok(false));
+        i2c_clone.done();
+    }
+
+    #[test]
     pub fn set_led_on() {
-        let expectations = [I2cTransaction::write(0x5C, vec![0x87, 0x01])];
+        let expectations = [I2cTransaction::write(0x5C, vec![0x07, 0x01])];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
@@ -212,7 +238,7 @@ mod test {
 
     #[test]
     pub fn set_led_off() {
-        let expectations = [I2cTransaction::write(0x5C, vec![0x87, 0x00])];
+        let expectations = [I2cTransaction::write(0x5C, vec![0x07, 0x00])];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
@@ -246,21 +272,17 @@ mod test {
         i2c_clone.done();
     }
 
-    // #[test]
-    // pub fn whoami() {
-    //     let expectations = [I2cTransaction::write_read(
-    //         0x5C,
-    //         vec![0x01],
-    //         vec![0x01, 0x10],
-    //     )];
-    //     let i2c = I2cMock::new(&expectations);
-    //     let mut i2c_clone = i2c.clone();
+    #[test]
+    pub fn whoami() {
+        let expectations = [I2cTransaction::write_read(0x5C, vec![0x11], vec![0x23])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
 
-    //     let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18::new(i2c, 0x5C);
 
-    //     assert_eq!(p18.whoami(), Ok(0x0110));
-    //     i2c_clone.done();
-    // }
+        assert_eq!(p18.whoami(), Ok(0x23));
+        i2c_clone.done();
+    }
 
     #[test]
     pub fn firmware() {
@@ -274,30 +296,6 @@ mod test {
         let mut p18 = P18::new(i2c, 0x5C);
 
         assert_eq!(p18.firmware(), Ok((0x01, 0x02)));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn self_test_ok() {
-        let expectations = [I2cTransaction::write_read(0x5C, vec![0x09], vec![0x01])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p18 = P18::new(i2c, 0x5C);
-
-        assert_eq!(p18.self_test(), Ok(true));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn self_test_not_ok() {
-        let expectations = [I2cTransaction::write_read(0x5C, vec![0x09], vec![0x00])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p18 = P18::new(i2c, 0x5C);
-
-        assert_eq!(p18.self_test(), Ok(false));
         i2c_clone.done();
     }
 }

@@ -47,11 +47,13 @@ impl<I2C: I2c> P13<I2C> {
         Ok(())
     }
 
+    // 0x0084 132
     /// # Errors
-    pub fn whoami(&mut self) -> Result<u8, I2C::Error> {
-        let mut maj: [u8; 1] = [0];
-        self.i2c.write_read(self.address, &[REG_WHOAMI], &mut maj)?;
-        Ok(maj[0])
+    pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
+        let mut data: [u8; 1] = [0];
+        self.i2c
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
+        Ok(u16::from_be_bytes([0, data[0]]))
     }
 
     pub fn firmware(&mut self) -> Result<(u8, u8), I2C::Error> {
@@ -157,57 +159,6 @@ mod test {
     }
 
     #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(0x09, vec![0x00], vec![2])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p13 = P13 { i2c, address: 0x09 };
-        assert_eq!(p13.whoami(), Ok(2));
-
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn set_led_on() {
-        let expectations = [I2cTransaction::write(0x09, vec![0x03, 0x01])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p13 = P13 { i2c, address: 0x09 };
-
-        assert_eq!(p13.set_led(true), Ok(()));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn set_led_off() {
-        let expectations = [I2cTransaction::write(0x09, vec![0x03, 0x00])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p13 = P13 { i2c, address: 0x09 };
-
-        assert_eq!(p13.set_led(false), Ok(()));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn firmware() {
-        let expectations = [
-            I2cTransaction::write_read(0x09, vec![0x02], vec![0x03]),
-            I2cTransaction::write_read(0x09, vec![0x01], vec![0x02]),
-        ];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p13 = P13 { i2c, address: 0x09 };
-
-        assert_eq!(p13.firmware(), Ok((0x03, 0x02)));
-        i2c_clone.done();
-    }
-
-    #[test]
     pub fn set_address() {
         let expectations = [I2cTransaction::write(0x09, vec![0x05, 0x69])];
 
@@ -244,6 +195,42 @@ mod test {
     }
 
     #[test]
+    pub fn whoami() {
+        let expectations = [I2cTransaction::write_read(0x09, vec![0x00], vec![2])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p13 = P13 { i2c, address: 0x09 };
+        assert_eq!(p13.whoami(), Ok(2));
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_led_on() {
+        let expectations = [I2cTransaction::write(0x09, vec![0x03, 0x01])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p13 = P13 { i2c, address: 0x09 };
+
+        assert_eq!(p13.set_led(true), Ok(()));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_led_off() {
+        let expectations = [I2cTransaction::write(0x09, vec![0x03, 0x00])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p13 = P13 { i2c, address: 0x09 };
+
+        assert_eq!(p13.set_led(false), Ok(()));
+        i2c_clone.done();
+    }
+
+    #[test]
     pub fn get_led_off() {
         let expectations = [I2cTransaction::write_read(0x09, vec![0x03], vec![0x00])];
         let i2c = I2cMock::new(&expectations);
@@ -264,6 +251,21 @@ mod test {
         let mut p13 = P13 { i2c, address: 0x09 };
 
         assert_eq!(p13.get_led(), Ok(true));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn firmware() {
+        let expectations = [
+            I2cTransaction::write_read(0x09, vec![0x02], vec![0x03]),
+            I2cTransaction::write_read(0x09, vec![0x01], vec![0x02]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p13 = P13 { i2c, address: 0x09 };
+
+        assert_eq!(p13.firmware(), Ok((0x03, 0x02)));
         i2c_clone.done();
     }
 }
