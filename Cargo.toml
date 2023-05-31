@@ -1,26 +1,43 @@
-[workspace]
-members = [ "p*", "xtask" ]
-
-[workspace.package]
+[package]
+name = "piicodev"
+version = "0.1.0"
+description = "d"
+keywords = ["TMP117", "Temperature", "Sensor", "PiicoDev"]
+authors = [
+  "Thomas Gilligan <thomas.gilligan@icloud.com>",
+]
 categories = ["embedded", "hardware-support", "no-std"]
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/tomgilligan/piicodev-drivers/"
 
-[workspace.dependencies]
+[dependencies]
+embedded-graphics = "0.7.1"
+embedded-hal = "=1.0.0-alpha.10"
+fugit = ">=0.3.6"
+measurements = ">=0.11"
+mfrc522 = { version="0.6.0", features=["eh1"] }
+libm = ">=0.2.6"
+palette = { version = "0.7.1", default-features = false, features = ["libm"] }
+smart-leds-trait = "0.2.1"
+
+[target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
+chrono = { version = ">=0.4.24", default-features = false }
 cortex-m = ">=0.7"
 cortex-m-rt = ">=0.7"
 defmt = ">= 0.3.2"
 defmt-rtt = ">=0.4"
-embedded-hal = "=1.0.0-alpha.10"
 fugit = ">=0.3.6"
-measurements = ">=0.11"
+embedded-hal = "=1.0.0-alpha.10"
 panic-probe = { version = ">=0.3", features = ["print-defmt"] }
 rp-pico = { git = "https://github.com/tomgilligan/rp-hal-boards.git" }
+
+[target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
 embedded-hal-mock = { git = "https://github.com/dbrgn/embedded-hal-mock.git", branch = "1-alpha" }
-linux-embedded-hal = { git = "https://github.com/tomgilligan/linux-embedded-hal.git" }
-libm = ">=0.2.6"
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
 chrono = { version = ">=0.4.24", default-features = false }
+linux-embedded-hal = { git = "https://github.com/tomgilligan/linux-embedded-hal.git" }
 
 # cargo build/run
 [profile.dev]

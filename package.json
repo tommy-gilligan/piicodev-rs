@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "check": "remark *.md **/*.md --quiet --frail"
+    "check": "remark *.md */*.md --quiet --frail"
   },
   "remarkConfig": {
     "plugins": [
