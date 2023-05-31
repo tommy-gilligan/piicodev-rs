@@ -97,28 +97,6 @@ jobs:
           components: rustfmt
           target: thumbv6m-none-eabi
       - run: cargo fmt -- --check
-  xtask:
-    name: XTask
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: nightly
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/.crates.toml
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-xtask-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - run: cargo build --package xtask
-      - run: cargo xtask ci
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
