@@ -45,19 +45,9 @@ impl<I2C: I2c> P13<I2C> {
     pub const fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-
-    // should somehow destroy instance after call
-    pub fn set_address(&mut self, new_address: u8) -> Result<(), Error<I2C::Error>> {
-        if !(0x08..=0x77).contains(&new_address) {
-            return Err(Error::ArgumentError);
-        }
-        self.i2c
-            .write(self.address, &[REG_I2C_ADDRESS, new_address])?;
-        Ok(())
-    }
 }
 
-use crate::Atmel;
+use crate::{Atmel, SetAddressError};
 impl<I2C: I2c> Atmel<I2C> for P13<I2C> {
     /// # Errors
     fn set_led(&mut self, on: bool) -> Result<(), I2C::Error> {
@@ -97,6 +87,16 @@ impl<I2C: I2c> Atmel<I2C> for P13<I2C> {
             Ok(true)
         }
     }
+
+    fn set_address(&mut self, new_address: u8) -> Result<(), SetAddressError<I2C::Error>> {
+        if !(0x08..=0x77).contains(&new_address) {
+            return Err(SetAddressError::ArgumentError);
+        }
+        self.i2c
+            .write(self.address, &[REG_I2C_ADDRESS, new_address])
+            .map_err(SetAddressError::I2cError)?;
+        Ok(())
+    }
 }
 
 impl<I2C: I2c> SmartLedsWrite for P13<I2C> {
@@ -134,7 +134,7 @@ mod atmel_test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p13::P13;
-    use crate::Atmel;
+    use crate::{Atmel, SetAddressError};
 
     #[test]
     pub fn whoami() {
@@ -210,6 +210,42 @@ mod atmel_test {
         assert_eq!(p13.firmware(), Ok((0x03, 0x02)));
         i2c_clone.done();
     }
+
+    #[test]
+    pub fn set_address() {
+        let expectations = [I2cTransaction::write(0x09, vec![0x05, 0x69])];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p13 = P13 { i2c, address: 0x09 };
+        p13.set_address(0x69).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_address_too_small() {
+        let expectations = [];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p13 = P13 { i2c, address: 0x09 };
+        assert_eq!(p13.set_address(0x07), Err(SetAddressError::ArgumentError));
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_address_too_large() {
+        let expectations = [];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p13 = P13 { i2c, address: 0x09 };
+        assert_eq!(p13.set_address(0x78), Err(SetAddressError::ArgumentError));
+
+        i2c_clone.done();
+    }
 }
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
@@ -221,7 +257,7 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use smart_leds_trait::{SmartLedsWrite, RGB};
 
-    use crate::p13::{Error, P13};
+    use crate::p13::P13;
 
     #[test]
     pub fn write() {
@@ -252,42 +288,6 @@ mod test {
             },
         ];
         p13.write(data.iter().copied()).unwrap();
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn set_address() {
-        let expectations = [I2cTransaction::write(0x09, vec![0x05, 0x69])];
-
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-        let mut p13 = P13 { i2c, address: 0x09 };
-        p13.set_address(0x69).unwrap();
-
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn set_address_too_small() {
-        let expectations = [];
-
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-        let mut p13 = P13 { i2c, address: 0x09 };
-        assert_eq!(p13.set_address(0x07), Err(Error::ArgumentError));
-
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn set_address_too_large() {
-        let expectations = [];
-
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-        let mut p13 = P13 { i2c, address: 0x09 };
-        assert_eq!(p13.set_address(0x78), Err(Error::ArgumentError));
-
         i2c_clone.done();
     }
 }

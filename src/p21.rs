@@ -14,6 +14,7 @@ use embedded_hal::i2c::I2c;
 const REG_WHOAMI: u8 = 0x01;
 const REG_FIRM_MAJ: u8 = 0x02;
 const REG_FIRM_MIN: u8 = 0x03;
+const REG_I2C_ADDRESS: u8 = 0x04;
 const REG_LED: u8 = 0x05;
 const REG_IS_PRESSED: u8 = 0x11;
 const REG_WAS_PRESSED: u8 = 0x12;
@@ -131,7 +132,7 @@ impl<I2C: I2c> P21<I2C> {
     }
 }
 
-use crate::Atmel;
+use crate::{Atmel, SetAddressError};
 impl<I2C: I2c> Atmel<I2C> for P21<I2C> {
     /// # Errors
     fn get_led(&mut self) -> Result<bool, I2C::Error> {
@@ -175,6 +176,16 @@ impl<I2C: I2c> Atmel<I2C> for P21<I2C> {
             .write_read(self.address, &[REG_WHOAMI], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
+
+    fn set_address(&mut self, new_address: u8) -> Result<(), SetAddressError<I2C::Error>> {
+        if !(0x08..=0x77).contains(&new_address) {
+            return Err(SetAddressError::ArgumentError);
+        }
+        self.i2c
+            .write(self.address, &[REG_I2C_ADDRESS, new_address])
+            .map_err(SetAddressError::I2cError)?;
+        Ok(())
+    }
 }
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
@@ -186,7 +197,7 @@ mod atmel_test {
 
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::p21::P21;
+    use crate::p21::{SetAddressError, P21};
     use crate::Atmel;
 
     #[test]
@@ -265,6 +276,42 @@ mod atmel_test {
         let mut p21 = P21::new(i2c, 0x10);
 
         assert_eq!(p21.whoami(), Ok(0x0199));
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_address() {
+        let expectations = [I2cTransaction::write(0x09, vec![0x04, 0x69])];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p21 = P21 { i2c, address: 0x09 };
+        p21.set_address(0x69).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_address_too_small() {
+        let expectations = [];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p21 = P21 { i2c, address: 0x09 };
+        assert_eq!(p21.set_address(0x07), Err(SetAddressError::ArgumentError));
+
+        i2c_clone.done();
+    }
+
+    #[test]
+    pub fn set_address_too_large() {
+        let expectations = [];
+
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+        let mut p21 = P21 { i2c, address: 0x09 };
+        assert_eq!(p21.set_address(0x78), Err(SetAddressError::ArgumentError));
+
         i2c_clone.done();
     }
 }
