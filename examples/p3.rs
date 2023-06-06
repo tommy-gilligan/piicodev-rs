@@ -47,7 +47,7 @@ mod linux {
         );
 
         let i2c = I2cdev::new(path_for_bus(i2c_bus).unwrap()).unwrap();
-        let mut p3 = P3::new(i2c, i2c_address, Delay).unwrap();
+        let mut p3 = P3::new(i2c, i2c_address).unwrap();
 
         loop {
             println!("{:?}", p3.read().unwrap());
@@ -119,8 +119,6 @@ mod arm {
         .ok()
         .unwrap();
 
-        let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
-
         let pins = rp_pico::Pins::new(
             pac.IO_BANK0,
             pac.PADS_BANK0,
@@ -139,15 +137,9 @@ mod arm {
             100_000_000.Hz(),
         );
 
-        info!("light off!");
-        led_pin.set_low().unwrap();
-        delay.delay_ms(500);
-        let delay_1 = MyDelay(delay);
-        let mut p3 = P3::new(i2c, 0x10, delay_1).unwrap();
+        let mut p3 = P3::new(i2c, 0x10).unwrap();
 
         info!("{:?}", p3.read().unwrap());
-        info!("light on!");
-        led_pin.set_high().unwrap();
         loop {}
     }
 }

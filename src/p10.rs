@@ -11,7 +11,7 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-VEML6040-MicroPython-Module/tree/8cb4fc8c2534a9b67a9cae50527892cd902c4b45
 //! [Official Product Site]: https://piico.dev/p10
 //! [Datasheet]: https://www.vishay.com/docs/84276/veml6040.pdf
-use embedded_hal::{delay::DelayUs, i2c::I2c};
+use embedded_hal::i2c::I2c;
 use palette::{LinSrgb, SrgbLuma};
 
 const REG_CONF: u8 = 0x00;
@@ -31,13 +31,12 @@ const SHUTDOWN: u8 = 0x01;
 ///
 /// 1. Create an instance through [`P10::new`]
 /// 2. Read color information from the instance with [`P10::read`]
-pub struct P10<I2C, DELAY> {
+pub struct P10<I2C> {
     i2c: I2C,
     address: u8,
-    delay: DELAY,
 }
 
-impl<I2C: I2c, DELAY: DelayUs> P10<I2C, DELAY> {
+impl<I2C: I2c> P10<I2C> {
     /// Acquire a new P10 driver instance
     ///
     /// Arguments:
@@ -46,16 +45,11 @@ impl<I2C: I2c, DELAY: DelayUs> P10<I2C, DELAY> {
     /// * `delay`: should also be acquired from the target platform's HAL
     ///
     /// # Errors
-    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
-        let mut res = Self {
-            i2c,
-            address,
-            delay,
-        };
+    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
+        let mut res = Self { i2c, address };
 
         res.i2c.write(res.address, &[REG_CONF, SHUTDOWN])?;
         res.i2c.write(res.address, &[REG_CONF, DEFAULT_SETTINGS])?;
-        res.delay.delay_ms(50);
 
         Ok(res)
     }
@@ -89,7 +83,6 @@ mod test {
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
-    use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use palette::{LinSrgb, SrgbLuma};
 
@@ -104,7 +97,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P10::new(i2c, 0x10, MockNoop {}).unwrap();
+        P10::new(i2c, 0x10).unwrap();
 
         i2c_clone.done();
     }
@@ -120,11 +113,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p10 = P10 {
-            i2c,
-            address: 0x10,
-            delay: MockNoop {},
-        };
+        let mut p10 = P10 { i2c, address: 0x10 };
 
         assert_eq!(
             p10.read(),

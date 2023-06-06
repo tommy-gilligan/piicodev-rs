@@ -43,16 +43,9 @@ impl<I2C: I2c> P1<I2C> {
     pub fn read(&mut self) -> Result<Temperature, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c.write_read(self.address, &[REG_TEMPC], &mut data)?;
-        let temp_data_raw = u16::from_be_bytes(data);
-        if temp_data_raw >= 0x8000 {
-            Ok(Temperature::from_celsius(
-                f64::from(temp_data_raw - 0x8000) * 7.8125e-3_f64 - 256.0_f64,
-            ))
-        } else {
-            Ok(Temperature::from_celsius(
-                f64::from(temp_data_raw) * 7.8125e-3_f64,
-            ))
-        }
+        Ok(Temperature::from_celsius(
+            f64::from(i16::from_be_bytes(data)) * 7.8125e-3_f64,
+        ))
     }
 }
 
