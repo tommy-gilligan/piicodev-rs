@@ -50,7 +50,7 @@ mod linux {
         let mut p7 = P7::new(i2c, i2c_address, Delay).unwrap();
 
         loop {
-            println!("{:?}", p7.read().unwrap().as_millimetres());
+            println!("{:?}", p7.read().unwrap());
             let mut delay = Delay;
             delay.delay_ms(500);
         }
@@ -145,7 +145,7 @@ mod arm {
         let delay_1 = MyDelay(delay);
         let mut p7 = P7::new(i2c, 0x29, delay_1).unwrap();
 
-        info!("{:?}", p7.read().unwrap().as_millimetres());
+        info!("{:?}", p7.read().unwrap());
         info!("light on!");
         led_pin.set_high().unwrap();
 

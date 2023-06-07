@@ -12,7 +12,6 @@
 //! [Official Product Site]: https://piico.dev/p7
 //! [Datasheet]: https://www.st.com/resource/en/datasheet/vl53l1x.pdf
 use embedded_hal::{delay::DelayUs, i2c::I2c};
-use measurements::Length;
 
 const VL51L1X_DEFAULT_CONFIGURATION: [u8; 93] = [
     0x00, 0x2D,
@@ -147,13 +146,11 @@ impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
     }
 
     /// # Errors
-    pub fn read(&mut self) -> Result<Length, I2C::Error> {
+    pub fn read(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 17] = [0; 17];
         self.i2c
             .write_read(self.address, &[0x00, 0x89], &mut data)?;
-        Ok(Length::from_millimetres(
-            u16::from_be_bytes([data[13], data[14]]).into(),
-        ))
+        Ok(u16::from_be_bytes([data[13], data[14]]))
     }
 }
 
@@ -167,7 +164,6 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p7::P7;
-    use measurements::Length;
 
     #[test]
     pub fn new() {
@@ -231,7 +227,7 @@ mod test {
             address: 0x29,
             delay: MockNoop {},
         };
-        assert_eq!(p7.read().unwrap(), Length::from_millimetres(1000.0));
+        assert_eq!(p7.read().unwrap(), 1000);
 
         i2c_clone.done();
     }
