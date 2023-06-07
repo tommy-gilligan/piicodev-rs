@@ -14,7 +14,7 @@
 //! [Official Product Site]: https://piico.dev/p26
 //! [Datasheet]: https://core-electronics.com.au/attachments/uploads/lis3dh-datasheet.pdf
 use embedded_hal::i2c::I2c;
-use measurements::{Acceleration, Angle, Frequency};
+use measurements::{Acceleration, Angle};
 
 const REG_WHOAMI: u8 = 0x0F;
 const REG_CONTROL1: u8 = 0x20;
@@ -70,7 +70,7 @@ impl<I2C: I2c> P26<I2C> {
         res.i2c.write(address, &[REG_CONTROL4, 0x88])?;
 
         res.set_range(Gravity::EarthTimes2)?;
-        res.set_rate(Frequency::from_hertz(400.0))?;
+        res.set_rate(400)?;
         Ok(res)
     }
 
@@ -105,8 +105,8 @@ impl<I2C: I2c> P26<I2C> {
         Ok(())
     }
 
-    pub fn set_rate(&mut self, rate: Frequency) -> Result<(), Error<I2C::Error>> {
-        let rr = match rate.as_hertz() as u16 {
+    pub fn set_rate(&mut self, rate: u16) -> Result<(), Error<I2C::Error>> {
+        let rr = match rate {
             0 => 0x00,
             1 => 0x10,
             10 => 0x20,
@@ -227,7 +227,7 @@ mod test {
     extern crate embedded_hal_mock;
 
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-    use measurements::{Acceleration, Angle, Frequency};
+    use measurements::{Acceleration, Angle};
 
     use crate::p26::{Error, Gravity, TapDetection, P26};
 
@@ -287,7 +287,7 @@ mod test {
 
         let mut p26 = P26 { i2c, address: 0x19 };
 
-        assert_eq!(p26.set_rate(Frequency::from_hertz(400.0)), Ok(()));
+        assert_eq!(p26.set_rate(400), Ok(()));
         i2c_clone.done();
     }
 
@@ -299,10 +299,7 @@ mod test {
 
         let mut p26 = P26 { i2c, address: 0x19 };
 
-        assert_eq!(
-            p26.set_rate(Frequency::from_hertz(401.1)),
-            Err(Error::ArgumentError)
-        );
+        assert_eq!(p26.set_rate(401), Err(Error::ArgumentError));
         i2c_clone.done();
     }
 
