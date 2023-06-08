@@ -32,10 +32,10 @@ impl<I2C: I2c> P3<I2C> {
     }
 
     /// # Errors
-    pub fn read(&mut self) -> Result<f64, I2C::Error> {
+    pub fn read(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c.write_read(self.address, &[REG_ALS], &mut data)?;
-        Ok(f64::from(u16::from_le_bytes(data)) + 0.0576_f64)
+        Ok(u16::from_le_bytes(data))
     }
 }
 
@@ -71,7 +71,7 @@ mod test {
 
         let mut p3 = P3::new(i2c, 0x10).unwrap();
 
-        assert_eq!(p3.read().unwrap(), 258.0576_f64);
+        assert_eq!(p3.read().unwrap(), 258);
 
         i2c_clone.done();
     }
