@@ -13,7 +13,6 @@
 //! [Datasheet]: https://www.te.com/commerce/DocumentDelivery/DDEController?Action=showdoc&DocId=Data+Sheet%7FMS5637-02BA03%7FB1%7Fpdf%7FEnglish%7FENG_DS_MS5637-02BA03_B1.pdf%7FCAT-BLPS0037
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
-use measurements::{Pressure, Temperature};
 
 pub struct P11<I2C, DELAY> {
     i2c: I2C,
@@ -100,6 +99,7 @@ impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P11<I2C, DELAY> {
     }
 }
 
+use rust_decimal::prelude::*;
 impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
     pub fn init(mut self) -> Result<Self, I2C::Error> {
         self.i2c.write(self.address, &[SOFT_RESET])?;
@@ -151,7 +151,7 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
     pub fn read_temperature_and_pressure(
         &mut self,
         res: Option<u8>,
-    ) -> Result<(Temperature, Pressure), I2C::Error> {
+    ) -> Result<(Decimal, Decimal), I2C::Error> {
         if !self.coefficient_valid {
             self.eeprom_coefficient = self.read_eeprom()?;
         }
@@ -208,15 +208,12 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
             >> 7_i64);
         sens -= sens2;
         //  Temperature compensated pressure = D1 * SENS - OFF
-        let p = (((i64::from(adc_pressure) * sens) >> 21_i64) - off) >> 15_i64;
-        #[expect(clippy::cast_precision_loss)]
-        let temperature = (temp - t2) as f64 / 100.0_f64;
-        #[expect(clippy::cast_precision_loss)]
-        let pressure = p as f64 / 100.0_f64;
-
         Ok((
-            Temperature::from_celsius(temperature),
-            Pressure::from_hectopascals(pressure),
+            Decimal::new(temp - t2, 2),
+            Decimal::new(
+                (((i64::from(adc_pressure) * sens) >> 21_i64) - off) >> 15_i64,
+                2,
+            ),
         ))
     }
 }
@@ -224,13 +221,13 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::WithDelay;
+    use rust_decimal::prelude::*;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-    use measurements::{Pressure, Temperature};
 
     use crate::p11::{set_resolution, P11};
 
@@ -328,10 +325,7 @@ mod test {
 
         assert_eq!(
             p11.read_temperature_and_pressure(None).unwrap(),
-            (
-                Temperature::from_kelvin(288.15),
-                Pressure::from_pascals(8066.0),
-            )
+            (Decimal::new(1500, 2), Decimal::new(8066, 2),)
         );
         i2c_clone.done();
     }
@@ -367,10 +361,7 @@ mod test {
 
         assert_eq!(
             p11.read_temperature_and_pressure(None).unwrap(),
-            (
-                Temperature::from_kelvin(207.919_999_999_999_96),
-                Pressure::from_pascals(185_262.0),
-            )
+            (Decimal::new(-6523, 2), Decimal::new(185_262, 2),)
         );
         i2c_clone.done();
     }

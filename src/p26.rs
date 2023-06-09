@@ -14,7 +14,6 @@
 //! [Official Product Site]: https://piico.dev/p26
 //! [Datasheet]: https://core-electronics.com.au/attachments/uploads/lis3dh-datasheet.pdf
 use embedded_hal::i2c::I2c;
-use measurements::{Acceleration, Angle};
 
 const REG_WHOAMI: u8 = 0x0F;
 const REG_CONTROL1: u8 = 0x20;
@@ -53,8 +52,6 @@ impl<E> From<E> for Error<E> {
     }
 }
 
-use libm::atan2;
-
 pub enum Gravity {
     EarthTimes2 = 0b0000_0000,
 }
@@ -66,6 +63,7 @@ impl<I2C: I2c> Driver<I2C> for P26<I2C> {
     }
 }
 
+use fixed::types::I2F14;
 impl<I2C: I2c> P26<I2C> {
     pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
         if self.whoami()? != DEVICE_ID {
@@ -131,44 +129,35 @@ impl<I2C: I2c> P26<I2C> {
         Ok(())
     }
 
-    pub fn acceleration(
-        &mut self,
-    ) -> Result<(Acceleration, Acceleration, Acceleration), I2C::Error> {
+    pub fn acceleration(&mut self) -> Result<(I2F14, I2F14, I2F14), I2C::Error> {
         let mut data: [u8; 6] = [0; 6];
-        let den: f64 = 1670.295;
         self.i2c
             .write_read(self.address, &[0x80 | OUT_X_L], &mut data)?;
 
         Ok((
-            Acceleration::from_metres_per_second_per_second(
-                f64::from(i16::from_le_bytes([data[0], data[1]])) / den,
-            ),
-            Acceleration::from_metres_per_second_per_second(
-                f64::from(i16::from_le_bytes([data[2], data[3]])) / den,
-            ),
-            Acceleration::from_metres_per_second_per_second(
-                f64::from(i16::from_le_bytes([data[4], data[5]])) / den,
-            ),
+            I2F14::from_bits(i16::from_le_bytes([data[0], data[1]])),
+            I2F14::from_bits(i16::from_le_bytes([data[2], data[3]])),
+            I2F14::from_bits(i16::from_le_bytes([data[4], data[5]])),
         ))
     }
 
-    pub fn angle(&mut self) -> Result<(Angle, Angle, Angle), I2C::Error> {
-        let (x, y, z) = self.acceleration()?;
-        Ok((
-            Angle::from_radians(atan2(
-                z.as_metres_per_second_per_second(),
-                x.as_metres_per_second_per_second(),
-            )),
-            Angle::from_radians(atan2(
-                x.as_metres_per_second_per_second(),
-                y.as_metres_per_second_per_second(),
-            )),
-            Angle::from_radians(atan2(
-                y.as_metres_per_second_per_second(),
-                z.as_metres_per_second_per_second(),
-            )),
-        ))
-    }
+    // pub fn angle(&mut self) -> Result<(Angle, Angle, Angle), I2C::Error> {
+    //     let (x, y, z) = self.acceleration()?;
+    //     Ok((
+    //         Angle::from_radians(atan2(
+    //             z.as_metres_per_second_per_second(),
+    //             x.as_metres_per_second_per_second(),
+    //         )),
+    //         Angle::from_radians(atan2(
+    //             x.as_metres_per_second_per_second(),
+    //             y.as_metres_per_second_per_second(),
+    //         )),
+    //         Angle::from_radians(atan2(
+    //             y.as_metres_per_second_per_second(),
+    //             z.as_metres_per_second_per_second(),
+    //         )),
+    //     ))
+    // }
 
     pub fn set_tap(
         &mut self,
@@ -228,13 +217,13 @@ impl<I2C: I2c> P26<I2C> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
+    use fixed::types::I2F14;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
 
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-    use measurements::{Acceleration, Angle};
 
     use crate::p26::{Error, Gravity, TapDetection, P26};
 
@@ -364,36 +353,36 @@ mod test {
         assert_eq!(
             p26.acceleration(),
             Ok((
-                Acceleration::from_meters_per_second_per_second(0.459_799_017_538_817_97_f64),
-                Acceleration::from_meters_per_second_per_second(-0.086_212_315_788_528_37_f64),
-                Acceleration::from_meters_per_second_per_second(9.962_312_046_674_39_f64),
+                I2F14::lit("0.0469"),
+                I2F14::lit("-0.0088"),
+                I2F14::lit("1.0156")
             ))
         );
         i2c_clone.done();
     }
 
-    #[test]
-    pub fn angle() {
-        let expectations = [I2cTransaction::write_read(
-            0x19,
-            vec![0xA8],
-            vec![0x00, 0x03, 0x70, 0xff, 0x00, 0x41],
-        )];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
+    // #[test]
+    // pub fn angle() {
+    //     let expectations = [I2cTransaction::write_read(
+    //         0x19,
+    //         vec![0xA8],
+    //         vec![0x00, 0x03, 0x70, 0xff, 0x00, 0x41],
+    //     )];
+    //     let i2c = I2cMock::new(&expectations);
+    //     let mut i2c_clone = i2c.clone();
 
-        let mut p26 = P26 { i2c, address: 0x19 };
+    //     let mut p26 = P26 { i2c, address: 0x19 };
 
-        assert_eq!(
-            p26.angle(),
-            Ok((
-                Angle::from_radians(1.524_675_210_780_385_4_f64),
-                Angle::from_radians(1.756_144_276_790_591_5_f64),
-                Angle::from_radians(-0.008_653_630_137_437_27_f64),
-            ))
-        );
-        i2c_clone.done();
-    }
+    //     assert_eq!(
+    //         p26.angle(),
+    //         Ok((
+    //             Angle::from_radians(1.524_675_210_780_385_4_f64),
+    //             Angle::from_radians(1.756_144_276_790_591_5_f64),
+    //             Angle::from_radians(-0.008_653_630_137_437_27_f64),
+    //         ))
+    //     );
+    //     i2c_clone.done();
+    // }
 
     #[test]
     pub fn set_tap() {

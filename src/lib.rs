@@ -1,5 +1,7 @@
 #![feature(int_roundings)]
 #![feature(lint_reasons)]
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 #![no_std]
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

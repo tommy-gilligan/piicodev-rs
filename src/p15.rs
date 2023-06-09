@@ -12,8 +12,7 @@
 //! [Official Product Site]: https://piico.dev/p15
 //! [Datasheet]: https://datasheet.lcsc.com/lcsc/2007101835_QST-QMC6310U_C669299.pdf
 use embedded_hal::i2c::I2c;
-use libm::{atan2, sqrt};
-use measurements::Angle;
+use rust_decimal::prelude::*;
 
 const REG_XOUT: u8 = 0x01;
 const REG_YOUT: u8 = 0x03;
@@ -78,7 +77,7 @@ impl<I2C: I2c> P15<I2C> {
         }
     }
 
-    pub fn read(&mut self) -> Result<(f64, f64, f64), I2C::Error> {
+    pub fn read(&mut self) -> Result<(Decimal, Decimal, Decimal), I2C::Error> {
         let mut data_x: [u8; 2] = [0, 0];
         self.i2c
             .write_read(self.address, &[REG_XOUT], &mut data_x)?;
@@ -89,31 +88,32 @@ impl<I2C: I2c> P15<I2C> {
         self.i2c
             .write_read(self.address, &[REG_ZOUT], &mut data_z)?;
         Ok((
-            f64::from(i16::from_le_bytes(data_x)) * 0.1_f64,
-            f64::from(i16::from_le_bytes(data_y)) * 0.1_f64,
-            f64::from(i16::from_le_bytes(data_z)) * 0.1_f64,
+            Decimal::new(i16::from_le_bytes(data_x).into(), 1),
+            Decimal::new(i16::from_le_bytes(data_y).into(), 1),
+            Decimal::new(i16::from_le_bytes(data_z).into(), 1),
         ))
     }
 
-    pub fn read_angle(&mut self) -> Result<Angle, I2C::Error> {
-        let (x, y, _) = self.read()?;
-        Ok(Angle::from_radians(atan2(x, -y)))
-    }
+    // should be moved to separate impl
+    // pub fn read_angle(&mut self) -> Result<Angle, I2C::Error> {
+    //     let (x, y, _) = self.read()?;
+    //     Ok(Angle::from_radians(atan2(x, -y)))
+    // }
 
-    pub fn read_magnitude(&mut self) -> Result<f64, I2C::Error> {
-        let (x, y, z) = self.read()?;
-        Ok(sqrt(x * x + y * y + z * z))
-    }
+    // pub fn read_magnitude(&mut self) -> Result<f64, I2C::Error> {
+    //     let (x, y, z) = self.read()?;
+    //     Ok(sqrt(x * x + y * y + z * z))
+    // }
 }
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use rust_decimal::prelude::*;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-    use measurements::Angle;
 
     use crate::p15::P15;
     use crate::Driver;
@@ -219,47 +219,47 @@ mod test {
         assert_eq!(
             p15.read(),
             Ok((
-                27.200_000_000_000_003_f64,
-                -54.5_f64,
-                81.600_000_000_000_01_f64
+                Decimal::new(272, 1),
+                Decimal::new(-545, 1),
+                Decimal::new(816, 1),
             ))
         );
 
         i2c_clone.done();
     }
 
-    #[test]
-    pub fn read_angle() {
-        let expectations = [
-            I2cTransaction::write_read(0x1C, vec![0x01], vec![0x10, 0x01]),
-            I2cTransaction::write_read(0x1C, vec![0x03], vec![0xDF, 0xFD]),
-            I2cTransaction::write_read(0x1C, vec![0x05], vec![0x30, 0x03]),
-        ];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
+    // #[test]
+    // pub fn read_angle() {
+    //     let expectations = [
+    //         I2cTransaction::write_read(0x1C, vec![0x01], vec![0x10, 0x01]),
+    //         I2cTransaction::write_read(0x1C, vec![0x03], vec![0xDF, 0xFD]),
+    //         I2cTransaction::write_read(0x1C, vec![0x05], vec![0x30, 0x03]),
+    //     ];
+    //     let i2c = I2cMock::new(&expectations);
+    //     let mut i2c_clone = i2c.clone();
 
-        let mut p15 = P15 { i2c, address: 0x1C };
-        assert_eq!(
-            p15.read_angle(),
-            Ok(Angle::from_degrees(26.522_983_798_797_82))
-        );
+    //     let mut p15 = P15 { i2c, address: 0x1C };
+    //     assert_eq!(
+    //         p15.read_angle(),
+    //         Ok(Angle::from_degrees(26.522_983_798_797_82))
+    //     );
 
-        i2c_clone.done();
-    }
+    //     i2c_clone.done();
+    // }
 
-    #[test]
-    pub fn read_magnitude() {
-        let expectations = [
-            I2cTransaction::write_read(0x1C, vec![0x01], vec![0x10, 0x01]),
-            I2cTransaction::write_read(0x1C, vec![0x03], vec![0xDF, 0xFD]),
-            I2cTransaction::write_read(0x1C, vec![0x05], vec![0x30, 0x03]),
-        ];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
+    // #[test]
+    // pub fn read_magnitude() {
+    //     let expectations = [
+    //         I2cTransaction::write_read(0x1C, vec![0x01], vec![0x10, 0x01]),
+    //         I2cTransaction::write_read(0x1C, vec![0x03], vec![0xDF, 0xFD]),
+    //         I2cTransaction::write_read(0x1C, vec![0x05], vec![0x30, 0x03]),
+    //     ];
+    //     let i2c = I2cMock::new(&expectations);
+    //     let mut i2c_clone = i2c.clone();
 
-        let mut p15 = P15 { i2c, address: 0x1C };
-        assert_eq!(p15.read_magnitude(), Ok(101.826_568_242_281_45_f64));
+    //     let mut p15 = P15 { i2c, address: 0x1C };
+    //     assert_eq!(p15.read_magnitude(), Ok(101.826_568_242_281_45_f64));
 
-        i2c_clone.done();
-    }
+    //     i2c_clone.done();
+    // }
 }

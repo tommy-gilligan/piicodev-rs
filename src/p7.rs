@@ -129,12 +129,14 @@ impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
     pub fn init(mut self) -> Result<Self, I2C::Error> {
         self.reset()?;
         self.delay.delay_ms(1);
-        self.i2c.write(self.address, &VL51L1X_DEFAULT_CONFIGURATION)?;
+        self.i2c
+            .write(self.address, &VL51L1X_DEFAULT_CONFIGURATION)?;
         self.delay.delay_ms(100);
         // the API triggers this change in VL53L1_init_and_start_range() once a
         // measurement is started; assumes MM1 and MM2 are disabled
         let mut data: [u8; 2] = [0; 2];
-        self.i2c.write_read(self.address, &[0x00, 0x22], &mut data)?;
+        self.i2c
+            .write_read(self.address, &[0x00, 0x22], &mut data)?;
         data = u16::to_le_bytes(u16::from_le_bytes(data) * 4);
         self.i2c
             .write(self.address, &[0x00, 0x1E, data[0], data[1]])?;
