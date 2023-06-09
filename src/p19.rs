@@ -30,14 +30,20 @@ pub struct P19<I2C> {
     address: u8,
 }
 
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P19<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self { i2c, address }
+    }
+}
+
 impl<I2C: I2c> P19<I2C> {
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
-        let mut res = Self { i2c, address };
-        res.whoami()?;
-        res.set_battery_switchover(true)?;
-        res.config_trickle_charger(TrickleResistance::Resistance3kΩ)?;
-        res.set_trickle_charger(true)?;
-        Ok(res)
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        self.whoami()?;
+        self.set_battery_switchover(true)?;
+        self.config_trickle_charger(TrickleResistance::Resistance3kΩ)?;
+        self.set_trickle_charger(true)?;
+        Ok(self)
     }
 
     pub fn set_battery_switchover(&mut self, switchover_enabled: bool) -> Result<(), I2C::Error> {
@@ -126,6 +132,7 @@ impl<I2C: I2c> P19<I2C> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -133,6 +140,25 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p19::{TrickleResistance, P19};
+
+    #[test]
+    pub fn new() {
+        let expectations = [
+            I2cTransaction::write_read(0x52, vec![0x28], vec![201]),
+            I2cTransaction::write_read(0x52, vec![0x37], vec![0x19]),
+            I2cTransaction::write(0x52, vec![0x37, 0x15]),
+            I2cTransaction::write_read(0x52, vec![0x37], vec![0x00]),
+            I2cTransaction::write(0x52, vec![0x37, 0x80]),
+            I2cTransaction::write_read(0x52, vec![0x37], vec![0x00]),
+            I2cTransaction::write(0x52, vec![0x37, 0x20]),
+        ];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        P19::new(i2c, 0x52).init().unwrap();
+
+        i2c_clone.done();
+    }
 
     #[test]
     pub fn set_battery_switchover_true() {
@@ -221,25 +247,6 @@ mod test {
         let mut p19 = P19 { i2c, address: 0x52 };
 
         assert_eq!(p19.whoami(), Ok(201));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn new() {
-        let expectations = [
-            I2cTransaction::write_read(0x52, vec![0x28], vec![201]),
-            I2cTransaction::write_read(0x52, vec![0x37], vec![0x19]),
-            I2cTransaction::write(0x52, vec![0x37, 0x15]),
-            I2cTransaction::write_read(0x52, vec![0x37], vec![0x00]),
-            I2cTransaction::write(0x52, vec![0x37, 0x80]),
-            I2cTransaction::write_read(0x52, vec![0x37], vec![0x00]),
-            I2cTransaction::write(0x52, vec![0x37, 0x20]),
-        ];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        P19::new(i2c, 0x52).unwrap();
-
         i2c_clone.done();
     }
 

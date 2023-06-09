@@ -44,9 +44,9 @@ mod test {
     extern crate embedded_hal_mock;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::p16::{GenericUid, Uid, P16};
+    use crate::p16::P16;
     use mfrc522::comm::blocking::i2c::I2cInterface;
-    use mfrc522::{Initialized, Mfrc522};
+    use mfrc522::Mfrc522;
 
     #[test]
     pub fn new() {

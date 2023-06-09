@@ -76,19 +76,23 @@ pub struct P14<I2C> {
     framebuffer: [u8; BUFFER_SIZE],
 }
 
-impl<I2C: I2c> P14<I2C> {
-    /// # Errors
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
-        let mut res = Self {
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P14<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self {
             i2c,
             address,
             framebuffer: [0; BUFFER_SIZE],
-        };
-
-        for command in INIT_COMMANDS {
-            res.i2c.write(res.address, &[0x80, command])?;
         }
-        Ok(res)
+    }
+}
+
+impl<I2C: I2c> P14<I2C> {
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        for command in INIT_COMMANDS {
+            self.i2c.write(self.address, &[0x80, command])?;
+        }
+        Ok(self)
     }
 
     /// # Errors
@@ -159,6 +163,7 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p14::P14;
+    use crate::Driver;
 
     #[test]
     pub fn new() {
@@ -194,7 +199,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P14::new(i2c, 0x3C).unwrap();
+        P14::new(i2c, 0x3C).init().unwrap();
         i2c_clone.done();
     }
 

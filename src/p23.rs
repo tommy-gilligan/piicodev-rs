@@ -50,18 +50,24 @@ pub struct P23<I2C> {
     address: u8,
 }
 
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P23<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self { i2c, address }
+    }
+}
+
 impl<I2C: I2c> P23<I2C> {
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, Error<I2C::Error>> {
-        let mut res = Self { i2c, address };
-        if res.whoami()? != DEVICE_ID {
+    pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
+        if self.whoami()? != DEVICE_ID {
             return Err(Error::UnexpectedDevice);
         }
-        res.i2c
-            .write(res.address, &[REG_OPMODE, VAL_OPMODE_STANDARD])?;
-        res.i2c.write(res.address, &[REG_CONFIG, 0x00])?;
-        res.set_temperature(Temperature::from_celsius(25.0))?;
-        res.set_humidity(Humidity::from_percent(50.0))?;
-        Ok(res)
+        self.i2c
+            .write(self.address, &[REG_OPMODE, VAL_OPMODE_STANDARD])?;
+        self.i2c.write(self.address, &[REG_CONFIG, 0x00])?;
+        self.set_temperature(Temperature::from_celsius(25.0))?;
+        self.set_humidity(Humidity::from_percent(50.0))?;
+        Ok(self)
     }
 
     pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
@@ -113,6 +119,7 @@ impl<I2C: I2c> P23<I2C> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -134,7 +141,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P23::new(i2c, 0x53).unwrap();
+        P23::new(i2c, 0x53).init().unwrap();
 
         i2c_clone.done();
     }
@@ -149,7 +156,10 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        assert_eq!(P23::new(i2c, 0x53).err(), Some(Error::UnexpectedDevice));
+        assert_eq!(
+            P23::new(i2c, 0x53).init().err(),
+            Some(Error::UnexpectedDevice)
+        );
 
         i2c_clone.done();
     }

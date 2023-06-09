@@ -41,8 +41,9 @@ impl<E> From<E> for Error<E> {
     }
 }
 
-impl<I2C: I2c> P13<I2C> {
-    pub const fn new(i2c: I2C, address: u8) -> Self {
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P13<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }
@@ -258,6 +259,7 @@ mod test {
     use smart_leds_trait::{SmartLedsWrite, RGB};
 
     use crate::p13::P13;
+    use crate::Driver;
 
     #[test]
     pub fn write() {

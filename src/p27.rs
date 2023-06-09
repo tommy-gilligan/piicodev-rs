@@ -62,31 +62,35 @@ impl<E> From<E> for Error<E> {
     }
 }
 
-impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
-    /// # Errors
-    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, Error<I2C::Error>> {
-        let mut res = Self {
+use crate::WithDelay;
+impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P27<I2C, DELAY> {
+    fn new(i2c: I2C, address: u8, delay: DELAY) -> Self {
+        Self {
             i2c,
             address,
             delay,
-        };
-
-        res.set_led(true)?;
-
-        res.i2c
-            .write(res.address, &[REG_RFM69_NODE_ID | 0x80, 0, 0])?;
-        while !(res.transceiver_ready()?) {
-            res.delay.delay_ms(10);
         }
-        res.i2c
-            .write(res.address, &[REG_RFM69_NETWORK_ID | 0x80, 0])?;
+    }
+}
 
-        res.set_radio_frequency(922.MHz())?;
-        res.set_bit_rate(9_600)?;
+impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
+    pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
+        self.set_led(true)?;
 
-        res.set_tx_power(20)?;
-        if res.whoami()? != DEVICE_ID {}
-        Ok(res)
+        self.i2c
+            .write(self.address, &[REG_RFM69_NODE_ID | 0x80, 0, 0])?;
+        while !(self.transceiver_ready()?) {
+            self.delay.delay_ms(10);
+        }
+        self.i2c
+            .write(self.address, &[REG_RFM69_NETWORK_ID | 0x80, 0])?;
+
+        self.set_radio_frequency(922.MHz())?;
+        self.set_bit_rate(9_600)?;
+
+        self.set_tx_power(20)?;
+        if self.whoami()? != DEVICE_ID {}
+        Ok(self)
     }
 
     /// # Errors
@@ -192,7 +196,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
             .write_read(self.address, &[REG_TX_POWER], &mut data)?;
 
         #[expect(clippy::cast_possible_wrap)]
-        return Ok(data[0] as i8);
+        Ok(data[0] as i8)
     }
 
     /// # Errors
@@ -476,6 +480,7 @@ mod atmel_test {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::WithDelay;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -514,7 +519,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P27::new(i2c, 0x09, MockNoop {}).unwrap();
+        P27::new(i2c, 0x09, MockNoop {}).init().unwrap();
 
         i2c_clone.done();
     }

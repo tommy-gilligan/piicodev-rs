@@ -39,16 +39,22 @@ pub struct P29<I2C, DELAY> {
     delay: DELAY,
 }
 
-impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
-    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
-        let mut res = Self {
+use crate::WithDelay;
+impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P29<I2C, DELAY> {
+    fn new(i2c: I2C, address: u8, delay: DELAY) -> Self {
+        Self {
             i2c,
             address,
             delay,
-        };
-        res.reset()?;
-        res.set_frequency(50)?;
-        Ok(res)
+        }
+    }
+}
+
+impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        self.reset()?;
+        self.set_frequency(50)?;
+        Ok(self)
     }
 
     pub fn reset(&mut self) -> Result<(), I2C::Error> {
@@ -114,6 +120,7 @@ impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::WithDelay;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -137,7 +144,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P29::new(i2c, 0x44, MockNoop {}).unwrap();
+        P29::new(i2c, 0x44, MockNoop {}).init().unwrap();
 
         i2c_clone.done();
     }

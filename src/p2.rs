@@ -35,20 +35,26 @@ pub struct P2<I2C> {
     pub t_fine: Option<i32>,
 }
 
-impl<I2C: I2c> P2<I2C> {
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
-        let mut res = Self {
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P2<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self {
             i2c,
             address,
             temperature_data: None,
             pressure_data: None,
             humidity_data: None,
             t_fine: None,
-        };
-        res.load_temperature_data()?;
-        res.load_pressure_data()?;
-        res.load_humidity_data()?;
-        Ok(res)
+        }
+    }
+}
+
+impl<I2C: I2c> P2<I2C> {
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        self.load_temperature_data()?;
+        self.load_pressure_data()?;
+        self.load_humidity_data()?;
+        Ok(self)
     }
 
     fn load_temperature_data(&mut self) -> Result<(), I2C::Error> {
@@ -201,6 +207,7 @@ impl<I2C: I2c> P2<I2C> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -283,7 +290,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let p2 = P2::new(i2c, 0x77).unwrap();
+        let p2 = P2::new(i2c, 0x77).init().unwrap();
         assert_eq!(p2.temperature_data, Some((28834, 26639, 50)));
         assert_eq!(
             p2.pressure_data,

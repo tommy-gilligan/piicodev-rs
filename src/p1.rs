@@ -26,16 +26,13 @@ pub struct P1<I2C> {
     i2c: I2C,
     address: u8,
 }
-
-impl<I2C: I2c> P1<I2C> {
-    /// Returns a new P1 driver instance
-    ///
-    /// - The [`I2c`] argument should be acquired from the target platform's HAL.
-    /// - The address should match the hardware address set by the P1's onboard ASW switches.
-    pub const fn new(i2c: I2C, address: u8) -> Self {
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P1<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-
+}
+impl<I2C: I2c> P1<I2C> {
     /// Reads a [`Temperature`] from the P1
     /// # Errors
     ///
@@ -58,7 +55,19 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p1::P1;
+    use crate::Driver;
     use measurements::Temperature;
+
+    #[test]
+    pub fn new() {
+        let expectations = [];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        P1::new(i2c, 0x10);
+
+        i2c_clone.done();
+    }
 
     #[test]
     pub fn read() {
@@ -66,7 +75,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p1 = P1::new(i2c, 0x48);
+        let mut p1 = P1 { i2c, address: 0x48 };
 
         assert_eq!(p1.read(), Ok(Temperature::from_celsius(23.046_875)));
         i2c_clone.done();
@@ -78,7 +87,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p1 = P1::new(i2c, 0x48);
+        let mut p1 = P1 { i2c, address: 0x48 };
 
         assert_eq!(p1.read(), Ok(Temperature::from_celsius(-23.046_875)));
         i2c_clone.done();

@@ -44,30 +44,34 @@ pub struct P12<I2C> {
     address: u8,
 }
 
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P12<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self { i2c, address }
+    }
+}
+
 impl<I2C: I2c> P12<I2C> {
     /// # Errors
-    pub fn new(
-        i2c: I2C,
-        address: u8,
+    pub fn init(
+        mut self,
         touch_mode: Option<TouchMode>,
         sensitivity: Option<u8>,
     ) -> Result<Self, Error<I2C::Error>> {
-        let mut res = Self { i2c, address };
-
         let mut data: [u8; 1] = [0];
-        res.i2c
-            .write_read(res.address, &[MULTIPLE_TOUCH_CONFIG], &mut data)?;
+        self.i2c
+            .write_read(self.address, &[MULTIPLE_TOUCH_CONFIG], &mut data)?;
         // not working
-        res.i2c.write(
-            res.address,
+        self.i2c.write(
+            self.address,
             &[
                 MULTIPLE_TOUCH_CONFIG,
                 (touch_mode.unwrap_or(TouchMode::Multi) as u8) & data[0],
             ],
         )?;
-        res.set_sensitivity(sensitivity.unwrap_or(3))?;
+        self.set_sensitivity(sensitivity.unwrap_or(3))?;
 
-        Ok(res)
+        Ok(self)
     }
 
     /// # Errors
@@ -133,7 +137,7 @@ impl<I2C: I2c> P12<I2C> {
             .write_read(self.address, &[SENSOR_INPUT_3_DELTA_COUNT], &mut data_2)?;
 
         #[expect(clippy::cast_possible_wrap)]
-        return Ok((data_0[0] as i8, data_1[0] as i8, data_2[0] as i8));
+        Ok((data_0[0] as i8, data_1[0] as i8, data_2[0] as i8))
     }
 }
 
@@ -147,6 +151,7 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p12::{Error, P12};
+    use crate::Driver;
 
     #[test]
     pub fn new() {
@@ -159,7 +164,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P12::new(i2c, 0x28, None, None).unwrap();
+        P12::new(i2c, 0x28).init(None, None).unwrap();
 
         i2c_clone.done();
     }

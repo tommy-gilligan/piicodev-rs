@@ -32,13 +32,19 @@ pub struct P15<I2C> {
     address: u8,
 }
 
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P15<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self { i2c, address }
+    }
+}
+
 impl<I2C: I2c> P15<I2C> {
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
-        let mut res = Self { i2c, address };
-        res.set_sign()?;
-        res.set_range()?;
-        res.set_control_register()?;
-        Ok(res)
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        self.set_sign()?;
+        self.set_range()?;
+        self.set_control_register()?;
+        Ok(self)
     }
 
     fn set_control_register(&mut self) -> Result<(), I2C::Error> {
@@ -110,6 +116,7 @@ mod test {
     use measurements::Angle;
 
     use crate::p15::P15;
+    use crate::Driver;
 
     #[test]
     pub fn set_control_register() {
@@ -157,7 +164,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P15::new(i2c, 0x1C).unwrap();
+        P15::new(i2c, 0x1C).init().unwrap();
 
         i2c_clone.done();
     }

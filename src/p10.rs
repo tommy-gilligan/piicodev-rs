@@ -36,22 +36,19 @@ pub struct P10<I2C> {
     address: u8,
 }
 
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P10<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self { i2c, address }
+    }
+}
 impl<I2C: I2c> P10<I2C> {
-    /// Acquire a new P10 driver instance
-    ///
-    /// Arguments:
-    /// * `i2c`: should be acquired from the target platform's HAL
-    /// * `address`: must match the hardware address of the P10.  This should be 0x10.
-    /// * `delay`: should also be acquired from the target platform's HAL
-    ///
-    /// # Errors
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
-        let mut res = Self { i2c, address };
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        self.i2c.write(self.address, &[REG_CONF, SHUTDOWN])?;
+        self.i2c
+            .write(self.address, &[REG_CONF, DEFAULT_SETTINGS])?;
 
-        res.i2c.write(res.address, &[REG_CONF, SHUTDOWN])?;
-        res.i2c.write(res.address, &[REG_CONF, DEFAULT_SETTINGS])?;
-
-        Ok(res)
+        Ok(self)
     }
 
     /// # Errors
@@ -87,6 +84,7 @@ mod test {
     use palette::{LinSrgb, SrgbLuma};
 
     use crate::p10::P10;
+    use crate::Driver;
 
     #[test]
     pub fn new() {
@@ -97,7 +95,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P10::new(i2c, 0x10).unwrap();
+        P10::new(i2c, 0x10).init().unwrap();
 
         i2c_clone.done();
     }

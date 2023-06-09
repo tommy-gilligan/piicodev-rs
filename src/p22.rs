@@ -24,11 +24,14 @@ pub struct P22<I2C> {
     address: u8,
 }
 
-impl<I2C: I2c> P22<I2C> {
-    pub const fn new(i2c: I2C, address: u8) -> Self {
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P22<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
+}
 
+impl<I2C: I2c> P22<I2C> {
     pub fn read(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c.write_read(self.address, &[REG_POT], &mut data)?;
@@ -99,6 +102,7 @@ impl<I2C: I2c> Atmel<I2C> for P22<I2C> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod atmel_test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -226,6 +230,7 @@ mod atmel_test {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;

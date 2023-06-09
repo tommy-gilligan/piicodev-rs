@@ -29,11 +29,14 @@ pub struct P21<I2C> {
     address: u8,
 }
 
-impl<I2C: I2c> P21<I2C> {
-    pub const fn new(i2c: I2C, address: u8) -> Self {
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P21<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
+}
 
+impl<I2C: I2c> P21<I2C> {
     /// # Errors
     pub fn is_pressed(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0];
@@ -206,7 +209,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.get_led(), Ok(false));
         i2c_clone.done();
@@ -218,7 +221,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.get_led(), Ok(true));
         i2c_clone.done();
@@ -230,7 +233,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         p21.set_led(true).unwrap();
         i2c_clone.done();
@@ -242,7 +245,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         p21.set_led(false).unwrap();
         i2c_clone.done();
@@ -257,7 +260,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.firmware(), Ok((0x31, 0x52)));
         i2c_clone.done();
@@ -273,7 +276,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.whoami(), Ok(0x0199));
         i2c_clone.done();
@@ -318,6 +321,7 @@ mod atmel_test {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -328,12 +332,23 @@ mod test {
     use crate::p21::P21;
 
     #[test]
+    pub fn new() {
+        let expectations = [];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        P21::new(i2c, 0x10);
+
+        i2c_clone.done();
+    }
+
+    #[test]
     pub fn read_pressed() {
         let expectations = [I2cTransaction::write_read(0x10, vec![0x11], vec![0x00])];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.is_pressed(), Ok(true));
         i2c_clone.done();
@@ -345,7 +360,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.is_pressed(), Ok(false));
         i2c_clone.done();
@@ -361,7 +376,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.press_count(), Ok(274));
         i2c_clone.done();
@@ -377,7 +392,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.get_double_press_duration(), Ok(600));
         i2c_clone.done();
@@ -389,7 +404,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         p21.set_double_press_duration(144).unwrap();
         i2c_clone.done();
@@ -401,7 +416,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.was_double_pressed(), Ok(true));
         i2c_clone.done();
@@ -413,7 +428,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.was_double_pressed(), Ok(false));
         i2c_clone.done();
@@ -425,7 +440,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.get_ema_smoothing_factor(), Ok(153));
         i2c_clone.done();
@@ -437,7 +452,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         p21.set_ema_smoothing_factor(102).unwrap();
         i2c_clone.done();
@@ -449,7 +464,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.get_ema_period(), Ok(170));
         i2c_clone.done();
@@ -461,7 +476,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         p21.set_ema_period(119).unwrap();
         i2c_clone.done();
@@ -473,7 +488,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.was_pressed(), Ok(true));
         i2c_clone.done();
@@ -485,7 +500,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p21 = P21::new(i2c, 0x10);
+        let mut p21 = P21 { i2c, address: 0x10 };
 
         assert_eq!(p21.was_pressed(), Ok(false));
         i2c_clone.done();

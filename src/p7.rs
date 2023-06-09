@@ -114,27 +114,32 @@ pub struct P7<I2C, DELAY> {
     delay: DELAY,
 }
 
-impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
-    /// # Errors
-    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
-        let mut res = Self {
+use crate::WithDelay;
+impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P7<I2C, DELAY> {
+    fn new(i2c: I2C, address: u8, delay: DELAY) -> Self {
+        Self {
             i2c,
             address,
             delay,
-        };
-        res.reset()?;
-        res.delay.delay_ms(1);
-        res.i2c.write(res.address, &VL51L1X_DEFAULT_CONFIGURATION)?;
-        res.delay.delay_ms(100);
+        }
+    }
+}
+
+impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        self.reset()?;
+        self.delay.delay_ms(1);
+        self.i2c.write(self.address, &VL51L1X_DEFAULT_CONFIGURATION)?;
+        self.delay.delay_ms(100);
         // the API triggers this change in VL53L1_init_and_start_range() once a
         // measurement is started; assumes MM1 and MM2 are disabled
         let mut data: [u8; 2] = [0; 2];
-        res.i2c.write_read(res.address, &[0x00, 0x22], &mut data)?;
+        self.i2c.write_read(self.address, &[0x00, 0x22], &mut data)?;
         data = u16::to_le_bytes(u16::from_le_bytes(data) * 4);
-        res.i2c
-            .write(res.address, &[0x00, 0x1E, data[0], data[1]])?;
-        res.delay.delay_ms(200);
-        Ok(res)
+        self.i2c
+            .write(self.address, &[0x00, 0x1E, data[0], data[1]])?;
+        self.delay.delay_ms(200);
+        Ok(self)
     }
 
     /// # Errors
@@ -156,6 +161,7 @@ impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::WithDelay;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -186,7 +192,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P7::new(i2c, 0x29, MockNoop {}).unwrap();
+        P7::new(i2c, 0x29, MockNoop {}).init().unwrap();
         i2c_clone.done();
     }
 

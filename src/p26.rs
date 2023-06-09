@@ -59,19 +59,25 @@ pub enum Gravity {
     EarthTimes2 = 0b0000_0000,
 }
 
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P26<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self { i2c, address }
+    }
+}
+
 impl<I2C: I2c> P26<I2C> {
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, Error<I2C::Error>> {
-        let mut res = Self { i2c, address };
-        if res.whoami()? != DEVICE_ID {
+    pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
+        if self.whoami()? != DEVICE_ID {
             return Err(Error::UnexpectedDevice);
         }
 
-        res.i2c.write(address, &[REG_CONTROL1, 0x07])?;
-        res.i2c.write(address, &[REG_CONTROL4, 0x88])?;
+        self.i2c.write(self.address, &[REG_CONTROL1, 0x07])?;
+        self.i2c.write(self.address, &[REG_CONTROL4, 0x88])?;
 
-        res.set_range(Gravity::EarthTimes2)?;
-        res.set_rate(400)?;
-        Ok(res)
+        self.set_range(Gravity::EarthTimes2)?;
+        self.set_rate(400)?;
+        Ok(self)
     }
 
     pub fn data_ready(&mut self) -> Result<bool, I2C::Error> {
@@ -221,6 +227,7 @@ impl<I2C: I2c> P26<I2C> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -245,7 +252,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let _p26 = P26::new(i2c, 0x19).unwrap();
+        P26::new(i2c, 0x19).init().unwrap();
 
         i2c_clone.done();
     }
@@ -256,7 +263,10 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        assert_eq!(P26::new(i2c, 0x19).err(), Some(Error::UnexpectedDevice));
+        assert_eq!(
+            P26::new(i2c, 0x19).init().err(),
+            Some(Error::UnexpectedDevice)
+        );
 
         i2c_clone.done();
     }

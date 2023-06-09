@@ -87,19 +87,24 @@ const fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
     (cmd_temp, cmd_pressure, time_temp, time_pressure)
 }
 
-impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
-    /// # Errors
-    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, I2C::Error> {
-        let mut res = Self {
+use crate::WithDelay;
+impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P11<I2C, DELAY> {
+    fn new(i2c: I2C, address: u8, delay: DELAY) -> Self {
+        Self {
             i2c,
             address,
             delay,
             coefficient_valid: false,
             eeprom_coefficient: [0; 7],
-        };
-        res.i2c.write(res.address, &[SOFT_RESET])?;
-        res.delay.delay_ms(15);
-        Ok(res)
+        }
+    }
+}
+
+impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        self.i2c.write(self.address, &[SOFT_RESET])?;
+        self.delay.delay_ms(15);
+        Ok(self)
     }
 
     /// # Errors
@@ -218,6 +223,7 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::WithDelay;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -234,7 +240,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P11::new(i2c, 0x76, MockNoop {}).unwrap();
+        P11::new(i2c, 0x76, MockNoop {}).init().unwrap();
         i2c_clone.done();
     }
 

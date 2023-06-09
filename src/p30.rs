@@ -45,20 +45,26 @@ impl<E> From<E> for Error<E> {
     }
 }
 
-impl<I2C: I2c> P30<I2C> {
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, Error<I2C::Error>> {
-        let mut res = Self {
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P30<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self {
             i2c,
             address,
             millimeters_per_microsecond: Cell::new(0.343_f64),
-        };
-        if res.whoami()? != DEVICE_ID {
+        }
+    }
+}
+
+impl<I2C: I2c> P30<I2C> {
+    pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
+        if self.whoami()? != DEVICE_ID {
             return Err(Error::UnexpectedDevice);
         }
-        res.set_period(20)?;
-        res.set_led(true)?;
+        self.set_period(20)?;
+        self.set_led(true)?;
 
-        Ok(res)
+        Ok(self)
     }
 
     /// Returns the [`Length`] between the ultrasound sensor and the surface of a target.
@@ -328,6 +334,7 @@ mod atmel_test {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -337,6 +344,8 @@ mod test {
     use measurements::Length;
 
     use crate::p30::{Error, P30};
+
+    // #[test]
 
     #[test]
     pub fn self_test_ok() {
@@ -468,7 +477,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let p30 = P30::new(i2c, 0x35).unwrap();
+        let p30 = P30::new(i2c, 0x35).init().unwrap();
 
         assert_eq!(p30.millimeters_per_microsecond.get(), 0.343_f64);
         i2c_clone.done();
@@ -484,7 +493,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        assert_eq!(P30::new(i2c, 0x35).err(), Some(Error::UnexpectedDevice));
+        assert_eq!(P30::new(i2c, 0x35).init().err(), Some(Error::UnexpectedDevice));
         i2c_clone.done();
     }
 

@@ -41,11 +41,14 @@ pub struct P18<I2C> {
     address: u8,
 }
 
-impl<I2C: I2c> P18<I2C> {
-    pub const fn new(i2c: I2C, address: u8) -> Self {
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P18<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
+}
 
+impl<I2C: I2c> P18<I2C> {
     pub fn tone(
         &mut self,
         frequency: Hertz<u32>,
@@ -167,7 +170,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.set_led(true), Ok(()));
         i2c_clone.done();
@@ -179,7 +182,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.set_led(false), Ok(()));
         i2c_clone.done();
@@ -191,7 +194,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.get_led(), Ok(false));
         i2c_clone.done();
@@ -203,7 +206,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.get_led(), Ok(true));
         i2c_clone.done();
@@ -215,7 +218,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.whoami(), Ok(0x23));
         i2c_clone.done();
@@ -230,7 +233,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.firmware(), Ok((0x01, 0x02)));
         i2c_clone.done();
@@ -275,6 +278,7 @@ mod atmel_test {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -286,6 +290,17 @@ mod test {
     use crate::p18::{Error, P18};
 
     #[test]
+    pub fn new() {
+        let expectations = [];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        P18::new(i2c, 0x5C);
+
+        i2c_clone.done();
+    }
+
+    #[test]
     pub fn tone() {
         let expectations = [I2cTransaction::write(
             0x5C,
@@ -294,7 +309,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.tone(518_u32.Hz(), 3000_u32.millis()), Ok(()));
         i2c_clone.done();
@@ -309,7 +324,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(
             p18.tone(518_u32.Hz(), 3000_u32.millis()),
@@ -327,7 +342,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.no_tone(), Ok(()));
         i2c_clone.done();
@@ -339,7 +354,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.read_status(), Ok(1));
         i2c_clone.done();
@@ -351,7 +366,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.self_test(), Ok(true));
         i2c_clone.done();
@@ -363,7 +378,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p18 = P18::new(i2c, 0x5C);
+        let mut p18 = P18 { i2c, address: 0x5C };
 
         assert_eq!(p18.self_test(), Ok(false));
         i2c_clone.done();
