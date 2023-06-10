@@ -111,7 +111,7 @@ impl<I2C: I2c> P26<I2C> {
             self.address,
             &[
                 REG_CONTROL4,
-                (data[0] & 0b1100_1111) | <Gravity as bitfield::Into<u8>>::into(range),
+                (data[0] & 0b1100_1111) | <Gravity as core::convert::Into<u8>>::into(range),
             ],
         )?;
         Ok(())
@@ -193,7 +193,13 @@ impl<I2C: I2c> P26<I2C> {
                 self.i2c
                     .write(self.address, &[REG_CONTROL3, data[0] | 0x80])?;
                 self.i2c.write(self.address, &[REG_CONTROL5, 0x08])?;
-                self.i2c.write(self.address, &[CLICK_CFG, tap as u8])?;
+                self.i2c.write(
+                    self.address,
+                    &[
+                        CLICK_CFG,
+                        <TapDetection as core::convert::Into<u8>>::into(tap),
+                    ],
+                )?;
                 Ok(self.i2c.write(
                     self.address,
                     &[

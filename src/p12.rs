@@ -141,8 +141,11 @@ impl<I2C: I2c> P12<I2C> {
         self.i2c
             .write_read(self.address, &[SENSOR_INPUT_3_DELTA_COUNT], &mut data_2)?;
 
-        #[expect(clippy::cast_possible_wrap)]
-        Ok((data_0[0] as i8, data_1[0] as i8, data_2[0] as i8))
+        Ok((
+            i8::from_be_bytes([data_0[0]]),
+            i8::from_be_bytes([data_1[0]]),
+            i8::from_be_bytes([data_2[0]]),
+        ))
     }
 }
 

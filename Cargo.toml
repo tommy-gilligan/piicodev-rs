@@ -15,7 +15,6 @@ repository = "https://github.com/tomgilligan/piicodev-drivers/"
 embedded-graphics = "0.7.1"
 embedded-hal = "=1.0.0-alpha.10"
 fugit = ">=0.3.6"
-measurements = ">=0.11"
 mfrc522 = { version="0.6.0", features=["eh1"] }
 libm = ">=0.2.6"
 palette = { version = "0.7.1", default-features = false, features = ["libm"] }
@@ -23,9 +22,7 @@ smart-leds-trait = "0.2.1"
 fixed = "2.0.0-alpha.11"
 rust_decimal = { version = "1.29", default-features = false }
 num_enum = { version = "0.6.1", default-features = false }
-bitfield = { version = "0.14.0" }
 cast = { version = "0.3.0", default-features = false }
-# uom = { version = "0.34.0" }
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
 chrono = { version = ">=0.4.24", default-features = false }

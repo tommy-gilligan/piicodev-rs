@@ -11,6 +11,7 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Transceiver-MicroPython-Module/tree/2c3e4423b86cfcb372a998f5bbc74319162b9a85
 //! [Official Product Site]: https://piico.dev/p27
 //! [Datasheet]: https://www.hoperf.com/data/upload/portal/20190307/RFM69HCW-V1.1.pdf
+use cast::usize;
 use core::num::TryFromIntError;
 use embedded_hal::{delay::DelayUs, i2c::I2c};
 use fugit::{Hertz, RateExtU32};
@@ -174,14 +175,14 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        let hz = frequency.to_Hz() / F_STEP;
+        let hz = u32::to_be_bytes(frequency.to_Hz() / F_STEP);
 
         self.delay.delay_ms(5);
-        self.set_rfm69_register(RFM69_REG_FRFMSB, (hz >> 16) as u8)?;
+        self.set_rfm69_register(RFM69_REG_FRFMSB, hz[1])?;
         self.delay.delay_ms(5);
-        self.set_rfm69_register(RFM69_REG_FRFMID, (hz >> 8) as u8)?;
+        self.set_rfm69_register(RFM69_REG_FRFMID, hz[2])?;
         self.delay.delay_ms(5);
-        self.set_rfm69_register(RFM69_REG_FRFLSB, hz as u8)?;
+        self.set_rfm69_register(RFM69_REG_FRFLSB, hz[3])?;
         self.delay.delay_ms(5);
         Ok(())
     }
@@ -195,8 +196,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         self.i2c
             .write_read(self.address, &[REG_TX_POWER], &mut data)?;
 
-        #[expect(clippy::cast_possible_wrap)]
-        Ok(data[0] as i8)
+        Ok(i8::from_le_bytes([data[0]]))
     }
 
     /// # Errors
@@ -204,9 +204,10 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         while !(self.transceiver_ready()?) {
             self.delay.delay_ms(10);
         }
-        #[expect(clippy::cast_sign_loss)]
-        self.i2c
-            .write(self.address, &[REG_TX_POWER | 0x80, value as u8])?;
+        self.i2c.write(
+            self.address,
+            &[REG_TX_POWER | 0x80, i8::to_be_bytes(value)[0]],
+        )?;
         Ok(())
     }
 
@@ -226,9 +227,9 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
             self.i2c.write_read(
                 self.address,
                 &[REG_PAYLOAD],
-                &mut data[0..(payload_length[0] as usize)],
+                &mut data[0..usize(payload_length[0])],
             )?;
-            Ok(payload_length[0] as usize)
+            Ok(usize(payload_length[0]))
         } else {
             Ok(0)
         }

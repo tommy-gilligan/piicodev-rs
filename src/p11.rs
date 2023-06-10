@@ -11,6 +11,7 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-MS5637-MicroPython-Module/tree/47c7c30d65ee9c189202e949030edcd816f4bfa7
 //! [Official Product Site]: https://piico.dev/p11
 //! [Datasheet]: https://www.te.com/commerce/DocumentDelivery/DDEController?Action=showdoc&DocId=Data+Sheet%7FMS5637-02BA03%7FB1%7Fpdf%7FEnglish%7FENG_DS_MS5637-02BA03_B1.pdf%7FCAT-BLPS0037
+use cast::usize;
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 
@@ -49,12 +50,12 @@ const RESOLUTION_OSR_2048: u8 = 3;
 const RESOLUTION_OSR_4096: u8 = 4;
 const RESOLUTION_OSR_8192: u8 = 5;
 
-const MS5637_PRESSURE_SENSITIVITY_INDEX: u8 = 1;
-const MS5637_PRESSURE_OFFSET_INDEX: u8 = 2;
-const MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX: u8 = 3;
-const MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX: u8 = 4;
-const MS5637_REFERENCE_TEMPERATURE_INDEX: u8 = 5;
-const MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX: u8 = 6;
+const MS5637_PRESSURE_SENSITIVITY_INDEX: usize = 1;
+const MS5637_PRESSURE_OFFSET_INDEX: usize = 2;
+const MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX: usize = 3;
+const MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX: usize = 4;
+const MS5637_REFERENCE_TEMPERATURE_INDEX: usize = 5;
+const MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX: usize = 6;
 
 // 0.001
 const MS5637_CONV_TIME_OSR_256: u32 = 1;
@@ -69,7 +70,7 @@ const MS5637_CONV_TIME_OSR_4096: u32 = 9;
 // 0.017
 const MS5637_CONV_TIME_OSR_8192: u32 = 17;
 
-const fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
+fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
     let time: [u32; 6] = [
         MS5637_CONV_TIME_OSR_256,
         MS5637_CONV_TIME_OSR_512,
@@ -79,9 +80,9 @@ const fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
         MS5637_CONV_TIME_OSR_8192,
     ];
     let cmd_temp: u8 = (res * 2) | MS5637_START_TEMPERATURE_ADC_CONVERSION;
-    let time_temp: u32 = time[((cmd_temp & MS5637_CONVERSION_OSR_MASK) / 2) as usize];
+    let time_temp: u32 = time[usize((cmd_temp & MS5637_CONVERSION_OSR_MASK) / 2)];
     let cmd_pressure: u8 = (res * 2) | MS5637_START_PRESSURE_ADC_CONVERSION;
-    let time_pressure: u32 = time[((cmd_temp & MS5637_CONVERSION_OSR_MASK) / 2) as usize];
+    let time_pressure: u32 = time[usize((cmd_temp & MS5637_CONVERSION_OSR_MASK) / 2)];
 
     (cmd_temp, cmd_pressure, time_temp, time_pressure)
 }
@@ -160,16 +161,11 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
         let adc_temperature: u32 = self.conversion_read_adc(cmd_temp, time_temp)?;
         let adc_pressure: u32 = self.conversion_read_adc(cmd_pressure, time_pressure)?;
         // Difference between actual and reference temperature = D2 - Tref
-        #[expect(clippy::cast_possible_wrap)]
         let d_t: i64 = i64::from(adc_temperature)
-            - ((u64::from(self.eeprom_coefficient[MS5637_REFERENCE_TEMPERATURE_INDEX as usize])
-                * 0x100_u64) as i64);
+            - i64::from(self.eeprom_coefficient[MS5637_REFERENCE_TEMPERATURE_INDEX]) * 0x100_i64;
         // Actual temperature = 2000 + dT * TEMPSENS
         let temp: i64 = 2000
-            + ((d_t
-                * i64::from(
-                    self.eeprom_coefficient[MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX as usize],
-                ))
+            + ((d_t * i64::from(self.eeprom_coefficient[MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX]))
                 >> 23);
         // Second order temperature compensation
         let t2: i64;
@@ -191,19 +187,16 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
         }
 
         //  OFF = OFF_T1 + TCO * dT
-        let mut off: i64 =
-            (i64::from(self.eeprom_coefficient[MS5637_PRESSURE_OFFSET_INDEX as usize]) << 17)
-                + ((i64::from(
-                    self.eeprom_coefficient[MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX as usize],
-                ) * d_t)
-                    >> 6);
+        let mut off: i64 = (i64::from(self.eeprom_coefficient[MS5637_PRESSURE_OFFSET_INDEX]) << 17)
+            + ((i64::from(self.eeprom_coefficient[MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX])
+                * d_t)
+                >> 6);
         off -= off2;
         // Sensitivity at actual temperature = SENS_T1 + TCS * dT
         let mut sens = i64::from(
-            u32::from(self.eeprom_coefficient[MS5637_PRESSURE_SENSITIVITY_INDEX as usize])
-                * 0x10000,
+            u32::from(self.eeprom_coefficient[MS5637_PRESSURE_SENSITIVITY_INDEX]) * 0x10000,
         ) + ((i64::from(
-            self.eeprom_coefficient[MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX as usize],
+            self.eeprom_coefficient[MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX],
         ) * d_t)
             >> 7_i64);
         sens -= sens2;
@@ -349,13 +342,13 @@ mod test {
             coefficient_valid: true,
             // exercises temp < 2000 branch
             eeprom_coefficient: [
-                -23_i16 as u16,
-                -23_i16 as u16,
-                -23_i16 as u16,
-                -23_i16 as u16,
-                -23_i16 as u16,
-                -23_i16 as u16,
-                -23_i16 as u16,
+                0b1111111111101001,
+                0b1111111111101001,
+                0b1111111111101001,
+                0b1111111111101001,
+                0b1111111111101001,
+                0b1111111111101001,
+                0b1111111111101001,
             ],
         };
 

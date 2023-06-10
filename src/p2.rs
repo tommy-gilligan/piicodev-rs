@@ -11,6 +11,7 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-BME280-MicroPython-Module
 //! [Official Product Site]: https://piico.dev/p2
 //! [Datasheet]: https://core-electronics.com.au/attachments/uploads/bme280.pdf
+use cast::u32;
 use core::num::NonZeroI64;
 use embedded_hal::i2c::I2c;
 
@@ -98,7 +99,7 @@ impl<I2C: I2c> P2<I2C> {
             dig_h_b[2],
             (i16::from(dig_h_b[3]) << 4_i32) | (i16::from(dig_h_b[4]) & 0x0f),
             ((i16::from(dig_h_b[4]) & 0xf0) >> 4_i32) | (i16::from(dig_h_b[5]) << 4_i32),
-            dig_h_b[6] as i8,
+            i8::from_be_bytes([dig_h_b[6]]),
         ));
         Ok(())
     }
@@ -176,7 +177,7 @@ impl<I2C: I2c> P2<I2C> {
             (i64::from(self.pressure_data.unwrap().8) * ((p >> 13_i32) * (p >> 13_i32))) >> 25_i32;
         var_2 = (i64::from(self.pressure_data.unwrap().7) * p) >> 19_i32;
         p = ((p + var_1 + var_2) >> 8_i32) + (i64::from(self.pressure_data.unwrap().6) << 4_i32);
-        p as u32
+        u32(p).unwrap()
     }
 
     fn compensate_h(&mut self, adc_h: i32) -> u32 {
@@ -201,7 +202,7 @@ impl<I2C: I2c> P2<I2C> {
             - (((((v_x1_u32r >> 15_i32) * (v_x1_u32r >> 15_i32)) >> 7_i32)
                 * i32::from(self.humidity_data.unwrap().0))
                 >> 4_i32);
-        (v_x1_u32r.clamp(0_i32, 419_430_400_i32) >> 12_i32) as u32
+        u32(v_x1_u32r.clamp(0_i32, 419_430_400_i32) >> 12_i32).unwrap()
     }
 }
 

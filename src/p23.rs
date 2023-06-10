@@ -12,7 +12,7 @@
 //! [Official Product Site]: https://piico.dev/p23
 //! [Datasheet]: https://github.com/CoreElectronics/CE-PiicoDev-Air-Quality-Sensor-ENS160/raw/main/Documents/ENS160-Datasheet%20v1.1.pdf
 use embedded_hal::i2c::I2c;
-use measurements::{Humidity, Temperature};
+use fixed::types::{U10F6, U7F9};
 
 const REG_WHOAMI: u8 = 0x00;
 
@@ -65,8 +65,8 @@ impl<I2C: I2c> P23<I2C> {
         self.i2c
             .write(self.address, &[REG_OPMODE, VAL_OPMODE_STANDARD])?;
         self.i2c.write(self.address, &[REG_CONFIG, 0x00])?;
-        self.set_temperature(Temperature::from_celsius(25.0))?;
-        self.set_humidity(Humidity::from_percent(50.0))?;
+        self.set_temperature(U10F6::lit("298.15"))?;
+        self.set_humidity(U7F9::lit("50"))?;
         Ok(self)
     }
 
@@ -78,8 +78,9 @@ impl<I2C: I2c> P23<I2C> {
         Ok(u16::from_le_bytes(data))
     }
 
-    pub fn set_temperature(&mut self, temperature: Temperature) -> Result<(), I2C::Error> {
-        let temperature_a: [u8; 2] = i16::to_le_bytes((temperature.as_kelvin() * 64.0) as i16);
+    // as kelvin
+    pub fn set_temperature(&mut self, temperature: U10F6) -> Result<(), I2C::Error> {
+        let temperature_a: [u8; 2] = U10F6::to_le_bytes(temperature);
         self.i2c.write(
             self.address,
             &[REG_TEMP_IN, temperature_a[0], temperature_a[1]],
@@ -87,8 +88,8 @@ impl<I2C: I2c> P23<I2C> {
         Ok(())
     }
 
-    pub fn set_humidity(&mut self, humidity: Humidity) -> Result<(), I2C::Error> {
-        let humidity_a: [u8; 2] = i16::to_le_bytes((humidity.as_percent() * 512.0) as i16);
+    pub fn set_humidity(&mut self, humidity: U7F9) -> Result<(), I2C::Error> {
+        let humidity_a: [u8; 2] = U7F9::to_le_bytes(humidity);
         self.i2c
             .write(self.address, &[REG_RH_IN, humidity_a[0], humidity_a[1]])?;
         Ok(())
@@ -120,6 +121,7 @@ impl<I2C: I2c> P23<I2C> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
+    use fixed::types::{U10F6, U7F9};
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -127,7 +129,6 @@ mod test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p23::{AirQuality, Error, P23};
-    use measurements::{Humidity, Temperature};
 
     #[test]
     pub fn new() {
@@ -135,7 +136,7 @@ mod test {
             I2cTransaction::write_read(0x53, vec![0x00], vec![0x60, 0x01]),
             I2cTransaction::write(0x53, vec![0x10, 0x02]),
             I2cTransaction::write(0x53, vec![0x11, 0x00]),
-            I2cTransaction::write(0x53, vec![0x13, 0x89, 0x4A]),
+            I2cTransaction::write(0x53, vec![0x13, 0x8A, 0x4A]),
             I2cTransaction::write(0x53, vec![0x15, 0x00, 0x64]),
         ];
         let i2c = I2cMock::new(&expectations);
@@ -164,16 +165,16 @@ mod test {
         i2c_clone.done();
     }
 
+    // U10F6
     #[test]
     pub fn set_temperature() {
-        let expectations = [I2cTransaction::write(0x53, vec![0x13, 0x29, 0x48])];
+        let expectations = [I2cTransaction::write(0x53, vec![0x13, 0x2A, 0x48])];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
         let mut p23 = P23 { i2c, address: 0x53 };
 
-        p23.set_temperature(Temperature::from_celsius(15.5))
-            .unwrap();
+        p23.set_temperature(U10F6::lit("288.65")).unwrap();
 
         i2c_clone.done();
     }
@@ -186,7 +187,7 @@ mod test {
 
         let mut p23 = P23 { i2c, address: 0x53 };
 
-        p23.set_humidity(Humidity::from_percent(25.0)).unwrap();
+        p23.set_humidity(U7F9::lit("25.0")).unwrap();
 
         i2c_clone.done();
     }

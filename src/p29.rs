@@ -11,9 +11,9 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Servo-Driver-MicroPython-Module/tree/e131dfa47b471bd6db5c2247d57f57233b5edfd9
 //! [Official Product Site]: https://piico.dev/p29
 //! [Datasheet]: https://www.nxp.com/products/power-management/lighting-driver-and-controller-ics/led-controllers/16-channel-12-bit-pwm-fm-plus-ic-bus-led-controller:PCA9685
+use cast::{u16, u32, u8};
 use core::cmp;
 use embedded_hal::{delay::DelayUs, i2c::I2c};
-use measurements::Angle;
 
 const FREQ: u32 = 50;
 const PERIOD: u32 = 1_000_000 / FREQ;
@@ -61,10 +61,9 @@ impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
         self.i2c.write(self.address, &[0x00, 0x00])
     }
 
+    #[allow(clippy::unwrap_in_result)]
     pub fn set_frequency(&mut self, frequency: u16) -> Result<(), I2C::Error> {
-        #[expect(clippy::cast_possible_truncation)]
-        #[expect(clippy::cast_sign_loss)]
-        let prescale: u8 = (25_000_000.0 / 4096.0 / f64::from(frequency) + 0.5) as u8;
+        let prescale: u8 = u8(6103_u16.div_ceil(frequency)).unwrap();
         let mut data: [u8; 1] = [0];
         self.i2c.write_read(self.address, &[0x00], &mut data)?;
         let old_mode: u8 = data[0];
@@ -103,12 +102,12 @@ impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
             .write(self.address, &[0x06 + 4 * channel, 0, 0, 0xeb, 0x01])
     }
 
-    pub fn set_angle(&mut self, channel: u8, x: Angle) -> Result<(), I2C::Error> {
-        let duty = ((f64::from(MIN_DUTY)
-            + f64::from(MAX_DUTY - MIN_DUTY) * x.as_degrees() / DEGREES)
-            as u32)
+    #[allow(clippy::unwrap_in_result)]
+    pub fn set_angle(&mut self, channel: u8, x: f64) -> Result<(), I2C::Error> {
+        let duty = u32(f64::from(MIN_DUTY) + f64::from(MAX_DUTY - MIN_DUTY) * x / DEGREES)
+            .unwrap()
             .clamp(MIN_DUTY, MAX_DUTY);
-        self.set_duty(channel, duty as u16)?;
+        self.set_duty(channel, u16(duty).unwrap())?;
         Ok(())
     }
 
@@ -127,7 +126,6 @@ mod test {
     extern crate embedded_hal_mock;
     use embedded_hal_mock::delay::MockNoop;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-    use measurements::Angle;
 
     use crate::p29::P29;
 
@@ -137,7 +135,7 @@ mod test {
             I2cTransaction::write(0x44, vec![0x00, 0x00]),
             I2cTransaction::write_read(0x44, vec![0x00], vec![0x70]),
             I2cTransaction::write(0x44, vec![0x00, 0x70]),
-            I2cTransaction::write(0x44, vec![0xfe, 122]),
+            I2cTransaction::write(0x44, vec![0xfe, 123]),
             I2cTransaction::write(0x44, vec![0x00, 0x70]),
             I2cTransaction::write(0x44, vec![0x00, 0xF1]),
         ];
@@ -248,7 +246,7 @@ mod test {
         let expectations = [
             I2cTransaction::write_read(0x44, vec![0x00], vec![0x00]),
             I2cTransaction::write(0x44, vec![0x00, 0x10]),
-            I2cTransaction::write(0x44, vec![0xfe, 122]),
+            I2cTransaction::write(0x44, vec![0xfe, 123]),
             I2cTransaction::write(0x44, vec![0x00, 0x00]),
             I2cTransaction::write(0x44, vec![0x00, 161]),
         ];
@@ -299,7 +297,7 @@ mod test {
             delay: MockNoop {},
         };
 
-        p29.set_angle(3, Angle::from_degrees(20.0)).unwrap();
+        p29.set_angle(3, 20.0).unwrap();
         i2c_clone.done();
     }
 }
