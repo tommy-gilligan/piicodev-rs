@@ -18,6 +18,9 @@ const REG_UNIX: u8 = 0x1B;
 const REG_ID: u8 = 0x28;
 const REG_EEPROM_BACKUP: u8 = 0x37;
 
+use num_enum::IntoPrimitive;
+#[derive(IntoPrimitive)]
+#[repr(u8)]
 pub enum TrickleResistance {
     Resistance3kΩ = 0,
     Resistance5kΩ = 1,
@@ -72,7 +75,8 @@ impl<I2C: I2c> P19<I2C> {
             self.address,
             &[
                 REG_EEPROM_BACKUP,
-                ((data[0] | 0x80) & 0b1111_1100) | (trickle_resistance as u8),
+                ((data[0] | 0x80) & 0b1111_1100)
+                    | <TrickleResistance as core::convert::Into<u8>>::into(trickle_resistance),
             ],
         )?;
 

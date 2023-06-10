@@ -22,6 +22,9 @@ const SENSOR_INPUT_3_DELTA_COUNT: u8 = 0x12;
 const SENSITIVITY_CONTROL: u8 = 0x1F;
 const MULTIPLE_TOUCH_CONFIG: u8 = 0x2A;
 
+use num_enum::IntoPrimitive;
+#[derive(IntoPrimitive)]
+#[repr(u8)]
 pub enum TouchMode {
     Single = 0xFF,
     Multi = 0x7F,
@@ -66,7 +69,9 @@ impl<I2C: I2c> P12<I2C> {
             self.address,
             &[
                 MULTIPLE_TOUCH_CONFIG,
-                (touch_mode.unwrap_or(TouchMode::Multi) as u8) & data[0],
+                <TouchMode as core::convert::Into<u8>>::into(
+                    touch_mode.unwrap_or(TouchMode::Multi),
+                ) & data[0],
             ],
         )?;
         self.set_sensitivity(sensitivity.unwrap_or(3))?;

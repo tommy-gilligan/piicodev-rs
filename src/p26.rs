@@ -27,6 +27,7 @@ const CLICK_CFG: u8 = 0x38;
 const CLICK_SRC: u8 = 0x39;
 const CLICK_THS: u8 = 0x3A;
 const DEVICE_ID: u8 = 0x33;
+use num_enum::IntoPrimitive;
 
 pub struct P26<I2C> {
     i2c: I2C,
@@ -40,6 +41,8 @@ pub enum Error<E> {
     UnexpectedDevice,
 }
 
+#[derive(IntoPrimitive)]
+#[repr(u8)]
 pub enum TapDetection {
     Disabled = 0x00,
     Single = 0x15,
@@ -52,6 +55,8 @@ impl<E> From<E> for Error<E> {
     }
 }
 
+#[derive(IntoPrimitive)]
+#[repr(u8)]
 pub enum Gravity {
     EarthTimes2 = 0b0000_0000,
 }
@@ -104,7 +109,10 @@ impl<I2C: I2c> P26<I2C> {
             .write_read(self.address, &[0x80 | REG_CONTROL4], &mut data)?;
         self.i2c.write(
             self.address,
-            &[REG_CONTROL4, (data[0] & 0b1100_1111) | (range as u8)],
+            &[
+                REG_CONTROL4,
+                (data[0] & 0b1100_1111) | <Gravity as bitfield::Into<u8>>::into(range),
+            ],
         )?;
         Ok(())
     }
