@@ -14,21 +14,33 @@
 use embedded_hal::i2c::I2c;
 use mfrc522::comm::blocking::i2c::I2cInterface;
 pub use mfrc522::{GenericUid, Uid};
-use mfrc522::{Initialized, Mfrc522};
+use mfrc522::{Initialized, Mfrc522, State, Uninitialized};
 
-pub struct P16<I2C: I2c> {
+pub struct P16<I2C: I2c, S: State> {
     #[allow(dead_code)]
-    mfrc522: Mfrc522<I2cInterface<I2C>, Initialized>,
+    mfrc522: Mfrc522<I2cInterface<I2C>, S>,
 }
 
-impl<I2C: I2c> P16<I2C> {
-    /// # Errors
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, mfrc522::error::Error<I2C::Error>> {
-        Ok(Self {
-            mfrc522: Mfrc522::new(I2cInterface::new(i2c, address)).init()?,
-        })
-    }
+use crate::Driver;
 
+impl<I2C: I2c> Driver<I2C> for P16<I2C, Uninitialized> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self {
+            mfrc522: Mfrc522::new(I2cInterface::new(i2c, address)),
+        }
+    }
+}
+
+impl<I2C: I2c> P16<I2C, Uninitialized> {
+    fn init(self) -> Result<P16<I2C, Initialized>, mfrc522::error::Error<I2C::Error>> {
+        let res: P16<_, Initialized> = P16 {
+            mfrc522: self.mfrc522.init()?,
+        };
+        Ok(res)
+    }
+}
+
+impl<I2C: I2c> P16<I2C, Initialized> {
     pub fn read_tag_id(&mut self) -> Result<Uid, mfrc522::error::Error<I2C::Error>> {
         let atqa = self.mfrc522.reqa()?;
         let uid = self.mfrc522.select(&atqa)?;
@@ -38,6 +50,7 @@ impl<I2C: I2c> P16<I2C> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -84,7 +97,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P16::new(i2c, 0x2C).unwrap();
+        P16::new(i2c, 0x2C).init().unwrap();
 
         i2c_clone.done();
     }
