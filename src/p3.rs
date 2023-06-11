@@ -22,16 +22,20 @@ pub struct P3<I2C> {
     address: u8,
 }
 
+use crate::Driver;
+impl<I2C: I2c> Driver<I2C> for P3<I2C> {
+    fn new(i2c: I2C, address: u8) -> Self {
+        Self { i2c, address }
+    }
+}
+
 impl<I2C: I2c> P3<I2C> {
-    /// # Errors
-    pub fn new(i2c: I2C, address: u8) -> Result<Self, I2C::Error> {
-        let mut res = Self { i2c, address };
-        res.i2c
-            .write(res.address, &[REG_ALS_CONF, DEFAULT_SETTINGS])?;
-        Ok(res)
+    pub fn init(mut self) -> Result<Self, I2C::Error> {
+        self.i2c
+            .write(self.address, &[REG_ALS_CONF, DEFAULT_SETTINGS])?;
+        Ok(self)
     }
 
-    /// # Errors
     pub fn read(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c.write_read(self.address, &[REG_ALS], &mut data)?;
@@ -41,6 +45,7 @@ impl<I2C: I2c> P3<I2C> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
+    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -56,20 +61,21 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P3::new(i2c, 0x10).unwrap();
+        P3::new(i2c, 0x10).init().unwrap();
         i2c_clone.done();
     }
 
     #[test]
     pub fn read() {
-        let expectations = [
-            I2cTransaction::write(0x10, vec![0, 0]),
-            I2cTransaction::write_read(0x10, vec![0x04], vec![0x02, 0x01]),
-        ];
+        let expectations = [I2cTransaction::write_read(
+            0x10,
+            vec![0x04],
+            vec![0x02, 0x01],
+        )];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p3 = P3::new(i2c, 0x10).unwrap();
+        let mut p3 = P3 { i2c, address: 0x10 };
 
         assert_eq!(p3.read().unwrap(), 258);
 
