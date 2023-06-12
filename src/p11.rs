@@ -12,7 +12,7 @@
 //! [Official Product Site]: https://piico.dev/p11
 //! [Datasheet]: https://www.te.com/commerce/DocumentDelivery/DDEController?Action=showdoc&DocId=Data+Sheet%7FMS5637-02BA03%7FB1%7Fpdf%7FEnglish%7FENG_DS_MS5637-02BA03_B1.pdf%7FCAT-BLPS0037
 
-use cast::usize;
+use num_enum::IntoPrimitive;
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
 
@@ -35,10 +35,6 @@ const MS5637_PROM_ADDR_4: u8 = 0xA8;
 const MS5637_PROM_ADDR_5: u8 = 0xAA;
 const MS5637_PROM_ADDR_6: u8 = 0xAC;
 
-const MS5637_START_TEMPERATURE_ADC_CONVERSION: u8 = 0x50;
-const MS5637_START_PRESSURE_ADC_CONVERSION: u8 = 0x40;
-const MS5637_CONVERSION_OSR_MASK: u8 = 0x0F;
-
 const RESOLUTION_OSR_8192: u8 = 5;
 
 const MS5637_PRESSURE_SENSITIVITY_INDEX: usize = 1;
@@ -48,28 +44,30 @@ const MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX: usize = 4;
 const MS5637_REFERENCE_TEMPERATURE_INDEX: usize = 5;
 const MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX: usize = 6;
 
-const MS5637_CONV_TIME_OSR_256: u32 = 1;
-const MS5637_CONV_TIME_OSR_512: u32 = 2;
-const MS5637_CONV_TIME_OSR_1024: u32 = 3;
-const MS5637_CONV_TIME_OSR_2048: u32 = 5;
-const MS5637_CONV_TIME_OSR_4096: u32 = 9;
-const MS5637_CONV_TIME_OSR_8192: u32 = 17;
+#[derive(IntoPrimitive)]
+#[repr(u32)]
+enum ConversionTime {
+    Osr256 = 1,
+    Osr512 = 2,
+    Osr1024 = 3,
+    Osr2048 = 5,
+    Osr4096 = 9,
+    Osr8192 = 17,
+}
 
-fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
+fn set_resolution(index: u8) -> (u8, u8, u32, u32) {
     let time: [u32; 6] = [
-        MS5637_CONV_TIME_OSR_256,
-        MS5637_CONV_TIME_OSR_512,
-        MS5637_CONV_TIME_OSR_1024,
-        MS5637_CONV_TIME_OSR_2048,
-        MS5637_CONV_TIME_OSR_4096,
-        MS5637_CONV_TIME_OSR_8192,
+        ConversionTime::Osr256.into(),
+        ConversionTime::Osr512.into(),
+        ConversionTime::Osr1024.into(),
+        ConversionTime::Osr2048.into(),
+        ConversionTime::Osr4096.into(),
+        ConversionTime::Osr8192.into(),
     ];
-    let cmd_temp: u8 = (res * 2) | MS5637_START_TEMPERATURE_ADC_CONVERSION;
-    let time_temp: u32 = time[usize((cmd_temp & MS5637_CONVERSION_OSR_MASK) / 2)];
-    let cmd_pressure: u8 = (res * 2) | MS5637_START_PRESSURE_ADC_CONVERSION;
-    let time_pressure: u32 = time[usize((cmd_temp & MS5637_CONVERSION_OSR_MASK) / 2)];
+    let time_temp: u32 = time[index as usize];
+    let time_pressure: u32 = time[index as usize];
 
-    (cmd_temp, cmd_pressure, time_temp, time_pressure)
+    ((index << 1) | 0b0101_0000, (index << 1) | 0b0100_0000, time_temp, time_pressure)
 }
 
 use crate::WithDelay;
