@@ -26,8 +26,6 @@ const REG_FIRM_MAJ: u8 = 0x02;
 const REG_LED: u8 = 0x03;
 const REG_I2C_ADDRESS: u8 = 0x05;
 
-const DEVICE_ID: u8 = 0x84;
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error<E> {
     TryFromIntError(TryFromIntError),
@@ -49,14 +47,14 @@ impl<I2C: I2c> Driver<I2C, core::convert::Infallible> for P13<I2C> {
 }
 
 use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C> for P13<I2C> {
-    // 0x0084 132
-    /// # Errors
-    fn whoami(&mut self) -> Result<u16, I2C::Error> {
+impl<I2C: I2c> WhoAmI<I2C, u8> for P13<I2C> {
+    const EXPECTED_WHOAMI: u8 = 0x84;
+
+    fn whoami(&mut self) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
             .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-        Ok(u16::from_be_bytes([0, data[0]]))
+        Ok(data[0])
     }
 }
 

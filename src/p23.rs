@@ -69,15 +69,20 @@ impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P23<I2C> {
     }
 }
 
-impl<I2C: I2c> P23<I2C> {
-    pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
+use crate::WhoAmI;
+impl<I2C: I2c> WhoAmI<I2C, u16> for P23<I2C> {
+    const EXPECTED_WHOAMI: u16 = 0x0160;
+
+    fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
             .write_read(self.address, &[REG_WHOAMI], &mut data)?;
 
         Ok(u16::from_le_bytes(data))
     }
+}
 
+impl<I2C: I2c> P23<I2C> {
     // as kelvin
     pub fn set_temperature(&mut self, temperature: U10F6) -> Result<(), I2C::Error> {
         let temperature_a: [u8; 2] = U10F6::to_le_bytes(temperature);
@@ -121,6 +126,7 @@ impl<I2C: I2c> P23<I2C> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
+    use crate::WhoAmI;
     use fixed::types::{U10F6, U7F9};
     extern crate std;
     use std::vec;

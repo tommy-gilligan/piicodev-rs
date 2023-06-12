@@ -48,6 +48,17 @@ impl<I2C: I2c> Driver<I2C, I2C::Error> for P19<I2C> {
     }
 }
 
+use crate::WhoAmI;
+impl<I2C: I2c> WhoAmI<I2C, u8> for P19<I2C> {
+    const EXPECTED_WHOAMI: u8 = 0;
+
+    fn whoami(&mut self) -> Result<u8, I2C::Error> {
+        let mut data: [u8; 1] = [0];
+        self.i2c.write_read(self.address, &[REG_ID], &mut data)?;
+        Ok(data[0] >> 4)
+    }
+}
+
 impl<I2C: I2c> P19<I2C> {
     pub fn set_battery_switchover(&mut self, switchover_enabled: bool) -> Result<(), I2C::Error> {
         let mut data: [u8; 1] = [0];
@@ -98,12 +109,6 @@ impl<I2C: I2c> P19<I2C> {
         Ok(())
     }
 
-    pub fn whoami(&mut self) -> Result<u8, I2C::Error> {
-        let mut data: [u8; 1] = [0];
-        self.i2c.write_read(self.address, &[REG_ID], &mut data)?;
-        Ok(data[0])
-    }
-
     pub fn get_unix_time(&mut self) -> Result<u32, I2C::Error> {
         let mut data: [u8; 4] = [0, 0, 0, 0];
         self.i2c.write_read(self.address, &[REG_UNIX], &mut data)?;
@@ -137,6 +142,7 @@ impl<I2C: I2c> P19<I2C> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
+    use crate::WhoAmI;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -250,7 +256,7 @@ mod test {
 
         let mut p19 = P19 { i2c, address: 0x52 };
 
-        assert_eq!(p19.whoami(), Ok(201));
+        assert_eq!(p19.whoami(), Ok(12));
         i2c_clone.done();
     }
 

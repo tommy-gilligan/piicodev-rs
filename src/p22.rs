@@ -51,7 +51,8 @@ impl<I2C: I2c> P22<I2C> {
 }
 
 use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C> for P22<I2C> {
+impl<I2C: I2c> WhoAmI<I2C, u16> for P22<I2C> {
+    const EXPECTED_WHOAMI: u16 = 0x019B;
     // slide 0x019B 411 knob 0x017B 379
     fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];

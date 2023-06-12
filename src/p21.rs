@@ -136,9 +136,9 @@ impl<I2C: I2c> P21<I2C> {
 }
 
 use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C> for P21<I2C> {
-    // 0x0199 409
-    /// # Errors
+impl<I2C: I2c> WhoAmI<I2C, u16> for P21<I2C> {
+    const EXPECTED_WHOAMI: u16 = 0x0199;
+
     fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c

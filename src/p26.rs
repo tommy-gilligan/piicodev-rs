@@ -81,6 +81,19 @@ impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P26<I2C> {
     }
 }
 
+use crate::WhoAmI;
+impl<I2C: I2c> WhoAmI<I2C, u8> for P26<I2C> {
+    const EXPECTED_WHOAMI: u8 = 0x33;
+
+    fn whoami(&mut self) -> Result<u8, I2C::Error> {
+        let mut data: [u8; 1] = [0; 1];
+        self.i2c
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
+
+        Ok(data[0])
+    }
+}
+
 use fixed::types::I2F14;
 impl<I2C: I2c> P26<I2C> {
     pub fn data_ready(&mut self) -> Result<bool, I2C::Error> {
@@ -93,14 +106,6 @@ impl<I2C: I2c> P26<I2C> {
         } else {
             Ok(true)
         }
-    }
-
-    pub fn whoami(&mut self) -> Result<u8, I2C::Error> {
-        let mut data: [u8; 1] = [0; 1];
-        self.i2c
-            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-
-        Ok(data[0])
     }
 
     pub fn set_range(&mut self, range: Gravity) -> Result<(), I2C::Error> {
@@ -231,6 +236,7 @@ impl<I2C: I2c> P26<I2C> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
+    use crate::WhoAmI;
     use fixed::types::I2F14;
     extern crate std;
     use std::vec;

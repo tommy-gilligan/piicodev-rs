@@ -18,8 +18,10 @@ trait Atmel<I2C: I2c> {
     fn set_address(&mut self, new_address: u8) -> Result<(), SetAddressError<I2C::Error>>;
 }
 
-trait WhoAmI<I2C: I2c> {
-    fn whoami(&mut self) -> Result<u16, I2C::Error>;
+trait WhoAmI<I2C: I2c, T: core::cmp::Eq> {
+    const EXPECTED_WHOAMI: T;
+
+    fn whoami(&mut self) -> Result<T, I2C::Error>;
 }
 
 #[derive(Debug)]

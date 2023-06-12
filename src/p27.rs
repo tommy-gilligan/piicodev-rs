@@ -267,9 +267,9 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
 }
 
 use crate::WhoAmI;
-impl<I2C: I2c, DELAY: DelayUs> WhoAmI<I2C> for P27<I2C, DELAY> {
-    // 0x01EF 495
-    /// # Errors
+impl<I2C: I2c, DELAY: DelayUs> WhoAmI<I2C, u16> for P27<I2C, DELAY> {
+    const EXPECTED_WHOAMI: u16 = 0x01EF;
+
     fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut maj: [u8; 2] = [0, 0];
         self.i2c.write_read(self.address, &[REG_WHOAMI], &mut maj)?;

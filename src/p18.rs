@@ -103,13 +103,14 @@ impl<I2C: I2c> P18<I2C> {
 }
 
 use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C> for P18<I2C> {
-    // 0x0051 81
-    fn whoami(&mut self) -> Result<u16, I2C::Error> {
+impl<I2C: I2c> WhoAmI<I2C, u8> for P18<I2C> {
+    const EXPECTED_WHOAMI: u8 = 0x51;
+
+    fn whoami(&mut self) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
             .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-        Ok(u16::from_be_bytes([0, data[0]]))
+        Ok(data[0])
     }
 }
 
