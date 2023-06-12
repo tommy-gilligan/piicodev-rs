@@ -52,7 +52,7 @@ pub struct P23<I2C> {
 
 use crate::Driver;
 impl<I2C: I2c> Driver<I2C> for P23<I2C> {
-    fn new(i2c: I2C, address: u8) -> Self {
+    fn alloc(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }
@@ -142,7 +142,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P23::new(i2c, 0x53).init().unwrap();
+        P23::new(i2c, 0x53).unwrap().init().unwrap();
 
         i2c_clone.done();
     }
@@ -157,10 +157,8 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        assert_eq!(
-            P23::new(i2c, 0x53).init().err(),
-            Some(Error::UnexpectedDevice)
-        );
+        let p23 = P23 { i2c, address: 0x53 };
+        assert_eq!(p23.init().err(), Some(Error::UnexpectedDevice));
 
         i2c_clone.done();
     }

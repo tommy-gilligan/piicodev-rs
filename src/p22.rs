@@ -26,7 +26,7 @@ pub struct P22<I2C> {
 
 use crate::Driver;
 impl<I2C: I2c> Driver<I2C> for P22<I2C> {
-    fn new(i2c: I2C, address: u8) -> Self {
+    fn alloc(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }
@@ -102,7 +102,6 @@ impl<I2C: I2c> Atmel<I2C> for P22<I2C> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod atmel_test {
-    use crate::Driver;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -118,7 +117,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.set_led(true), Ok(()));
         i2c_clone.done();
@@ -130,7 +129,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.set_led(false), Ok(()));
         i2c_clone.done();
@@ -142,7 +141,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.get_led(), Ok(false));
         i2c_clone.done();
@@ -154,7 +153,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.get_led(), Ok(true));
         i2c_clone.done();
@@ -170,7 +169,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.whoami(), Ok(0x0110));
         i2c_clone.done();
@@ -185,7 +184,7 @@ mod atmel_test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.firmware(), Ok((0x01, 0x02)));
         i2c_clone.done();
@@ -240,6 +239,17 @@ mod test {
     use crate::p22::P22;
 
     #[test]
+    pub fn new() {
+        let expectations = [];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        P22::new(i2c, 0x35).unwrap();
+
+        i2c_clone.done();
+    }
+
+    #[test]
     pub fn read() {
         let expectations = [I2cTransaction::write_read(
             0x35,
@@ -249,7 +259,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.read(), Ok(61453));
         i2c_clone.done();
@@ -261,7 +271,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.self_test(), Ok(true));
         i2c_clone.done();
@@ -273,7 +283,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let mut p22 = P22::new(i2c, 0x35);
+        let mut p22 = P22 { i2c, address: 0x35 };
 
         assert_eq!(p22.self_test(), Ok(false));
         i2c_clone.done();

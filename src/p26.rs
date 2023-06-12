@@ -63,7 +63,7 @@ pub enum Gravity {
 
 use crate::Driver;
 impl<I2C: I2c> Driver<I2C> for P26<I2C> {
-    fn new(i2c: I2C, address: u8) -> Self {
+    fn alloc(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }
@@ -255,7 +255,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P26::new(i2c, 0x19).init().unwrap();
+        P26::new(i2c, 0x19).unwrap().init().unwrap();
 
         i2c_clone.done();
     }
@@ -266,10 +266,9 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        assert_eq!(
-            P26::new(i2c, 0x19).init().err(),
-            Some(Error::UnexpectedDevice)
-        );
+        let p26 = P26 { i2c, address: 0x19 };
+
+        assert_eq!(p26.init().err(), Some(Error::UnexpectedDevice));
 
         i2c_clone.done();
     }

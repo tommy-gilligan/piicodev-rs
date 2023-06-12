@@ -45,7 +45,7 @@ impl<E> From<E> for Error<E> {
 
 use crate::Driver;
 impl<I2C: I2c> Driver<I2C> for P30<I2C> {
-    fn new(i2c: I2C, address: u8) -> Self {
+    fn alloc(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }
@@ -302,8 +302,6 @@ mod test {
 
     use crate::p30::{Error, P30};
 
-    // #[test]
-
     #[test]
     pub fn self_test_ok() {
         let expectations = [I2cTransaction::write_read(0x35, vec![0x09], vec![0x01])];
@@ -406,7 +404,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let _p30 = P30::new(i2c, 0x35).init().unwrap();
+        P30::new(i2c, 0x35).unwrap().init().unwrap();
 
         i2c_clone.done();
     }
@@ -421,10 +419,9 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        assert_eq!(
-            P30::new(i2c, 0x35).init().err(),
-            Some(Error::UnexpectedDevice)
-        );
+        let p30 = P30 { i2c, address: 0x35 };
+
+        assert_eq!(p30.init().err(), Some(Error::UnexpectedDevice));
         i2c_clone.done();
     }
 

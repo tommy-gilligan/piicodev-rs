@@ -24,7 +24,7 @@ pub struct P16<I2C: I2c, S: State> {
 use crate::Driver;
 
 impl<I2C: I2c> Driver<I2C> for P16<I2C, Uninitialized> {
-    fn new(i2c: I2C, address: u8) -> Self {
+    fn alloc(i2c: I2C, address: u8) -> Self {
         Self {
             mfrc522: Mfrc522::new(I2cInterface::new(i2c, address)),
         }
@@ -97,7 +97,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P16::new(i2c, 0x2C).init().unwrap();
+        P16::new(i2c, 0x2C).unwrap().init().unwrap();
 
         i2c_clone.done();
     }

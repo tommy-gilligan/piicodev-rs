@@ -41,7 +41,7 @@ pub struct P29<I2C, DELAY> {
 
 use crate::WithDelay;
 impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P29<I2C, DELAY> {
-    fn new(i2c: I2C, address: u8, delay: DELAY) -> Self {
+    fn alloc(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
             address,
@@ -142,7 +142,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P29::new(i2c, 0x44, MockNoop {}).init().unwrap();
+        P29::new(i2c, 0x44, MockNoop {}).unwrap().init().unwrap();
 
         i2c_clone.done();
     }

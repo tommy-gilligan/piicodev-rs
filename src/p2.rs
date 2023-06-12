@@ -38,7 +38,7 @@ pub struct P2<I2C> {
 
 use crate::Driver;
 impl<I2C: I2c> Driver<I2C> for P2<I2C> {
-    fn new(i2c: I2C, address: u8) -> Self {
+    fn alloc(i2c: I2C, address: u8) -> Self {
         Self {
             i2c,
             address,
@@ -291,7 +291,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        let p2 = P2::new(i2c, 0x77).init().unwrap();
+        let p2 = P2::new(i2c, 0x77).unwrap().init().unwrap();
         assert_eq!(p2.temperature_data, Some((28834, 26639, 50)));
         assert_eq!(
             p2.pressure_data,

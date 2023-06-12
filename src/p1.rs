@@ -28,7 +28,7 @@ pub struct P1<I2C> {
 use crate::Driver;
 use fixed::types::I9F7;
 impl<I2C: I2c> Driver<I2C> for P1<I2C> {
-    fn new(i2c: I2C, address: u8) -> Self {
+    fn alloc(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }
@@ -63,7 +63,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P1::new(i2c, 0x10);
+        P1::new(i2c, 0x10).unwrap();
 
         i2c_clone.done();
     }
