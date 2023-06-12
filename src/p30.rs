@@ -45,7 +45,7 @@ impl<E> From<E> for Error<E> {
 
 use crate::Driver;
 impl<I2C: I2c> Driver<I2C> for P30<I2C> {
-    fn alloc(i2c: I2C, address: u8) -> Self {
+    fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }

@@ -65,7 +65,7 @@ impl<E> From<E> for Error<E> {
 
 use crate::WithDelay;
 impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P27<I2C, DELAY> {
-    fn alloc(i2c: I2C, address: u8, delay: DELAY) -> Self {
+    fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
             address,

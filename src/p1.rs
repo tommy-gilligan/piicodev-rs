@@ -28,7 +28,7 @@ pub struct P1<I2C> {
 use crate::Driver;
 use fixed::types::I9F7;
 impl<I2C: I2c> Driver<I2C> for P1<I2C> {
-    fn alloc(i2c: I2C, address: u8) -> Self {
+    fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }

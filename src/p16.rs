@@ -24,7 +24,7 @@ pub struct P16<I2C: I2c, S: State> {
 use crate::Driver;
 
 impl<I2C: I2c> Driver<I2C> for P16<I2C, Uninitialized> {
-    fn alloc(i2c: I2C, address: u8) -> Self {
+    fn new_inner(i2c: I2C, address: u8) -> Self {
         Self {
             mfrc522: Mfrc522::new(I2cInterface::new(i2c, address)),
         }

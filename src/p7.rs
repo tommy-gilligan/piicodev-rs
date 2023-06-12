@@ -116,7 +116,7 @@ pub struct P7<I2C, DELAY> {
 
 use crate::WithDelay;
 impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P7<I2C, DELAY> {
-    fn alloc(i2c: I2C, address: u8, delay: DELAY) -> Self {
+    fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
             address,

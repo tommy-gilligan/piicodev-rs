@@ -32,13 +32,13 @@ trait Driver<I2C: I2c> {
             Err(OutOfRange)
         }
     }
-    fn alloc(i2c: I2C, address: u8) -> Self;
+    fn new_inner(i2c: I2C, address: u8) -> Self;
     fn new(i2c: I2C, address: u8) -> Result<Self, OutOfRange>
     where
         Self: Sized,
     {
         Self::address_check(address)?;
-        Ok(Self::alloc(i2c, address))
+        Ok(Self::new_inner(i2c, address))
     }
 }
 
@@ -50,13 +50,13 @@ trait WithDelay<I2C: I2c, DELAY: DelayUs> {
             Err(OutOfRange)
         }
     }
-    fn alloc(i2c: I2C, address: u8, delay: DELAY) -> Self;
+    fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self;
     fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, OutOfRange>
     where
         Self: Sized,
     {
         Self::address_check(address)?;
-        Ok(Self::alloc(i2c, address, delay))
+        Ok(Self::new_inner(i2c, address, delay))
     }
 }
 
