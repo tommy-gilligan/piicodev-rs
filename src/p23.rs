@@ -51,14 +51,12 @@ pub struct P23<I2C> {
 }
 
 use crate::Driver;
-impl<I2C: I2c> Driver<I2C> for P23<I2C> {
+impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P23<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-}
 
-impl<I2C: I2c> P23<I2C> {
-    pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
+    fn init_inner(mut self) -> Result<Self, Error<I2C::Error>> {
         if self.whoami()? != DEVICE_ID {
             return Err(Error::UnexpectedDevice);
         }
@@ -69,7 +67,9 @@ impl<I2C: I2c> P23<I2C> {
         self.set_humidity(U7F9::lit("50"))?;
         Ok(self)
     }
+}
 
+impl<I2C: I2c> P23<I2C> {
     pub fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c
@@ -158,7 +158,7 @@ mod test {
         let mut i2c_clone = i2c.clone();
 
         let p23 = P23 { i2c, address: 0x53 };
-        assert_eq!(p23.init().err(), Some(Error::UnexpectedDevice));
+        assert_eq!(p23.init_inner().err(), Some(Error::UnexpectedDevice));
 
         i2c_clone.done();
     }

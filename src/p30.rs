@@ -44,14 +44,12 @@ impl<E> From<E> for Error<E> {
 }
 
 use crate::Driver;
-impl<I2C: I2c> Driver<I2C> for P30<I2C> {
+impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P30<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-}
 
-impl<I2C: I2c> P30<I2C> {
-    pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
+    fn init_inner(mut self) -> Result<Self, Error<I2C::Error>> {
         if self.whoami()? != DEVICE_ID {
             return Err(Error::UnexpectedDevice);
         }
@@ -60,7 +58,9 @@ impl<I2C: I2c> P30<I2C> {
 
         Ok(self)
     }
+}
 
+impl<I2C: I2c> P30<I2C> {
     /// Returns the [`Length`] between the ultrasound sensor and the surface of a target.
     // pub fn length(&mut self) -> Result<Length, I2C::Error> {
     //     Ok(Length::from_millimeters(
@@ -437,7 +437,7 @@ mod test {
 
         let p30 = P30 { i2c, address: 0x35 };
 
-        assert_eq!(p30.init().err(), Some(Error::UnexpectedDevice));
+        assert_eq!(p30.init_inner().err(), Some(Error::UnexpectedDevice));
         i2c_clone.done();
     }
 

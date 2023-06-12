@@ -48,19 +48,14 @@ pub struct P12<I2C> {
 }
 
 use crate::Driver;
-impl<I2C: I2c> Driver<I2C> for P12<I2C> {
+impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P12<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-}
 
-impl<I2C: I2c> P12<I2C> {
-    /// # Errors
-    pub fn init(
-        mut self,
-        touch_mode: Option<TouchMode>,
-        sensitivity: Option<u8>,
-    ) -> Result<Self, Error<I2C::Error>> {
+    fn init_inner(mut self) -> Result<Self, Error<I2C::Error>> {
+        let touch_mode: Option<TouchMode> = None;
+        let sensitivity: Option<u8> = None;
         let mut data: [u8; 1] = [0];
         self.i2c
             .write_read(self.address, &[MULTIPLE_TOUCH_CONFIG], &mut data)?;
@@ -78,8 +73,9 @@ impl<I2C: I2c> P12<I2C> {
 
         Ok(self)
     }
+}
 
-    /// # Errors
+impl<I2C: I2c> P12<I2C> {
     pub fn get_sensitivity(&mut self) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
@@ -87,7 +83,6 @@ impl<I2C: I2c> P12<I2C> {
         Ok(data[0])
     }
 
-    /// # Errors
     pub fn set_sensitivity(&mut self, sensitivity: u8) -> Result<(), Error<I2C::Error>> {
         if sensitivity > 7 {
             return Err(Error::InvalidSensitivity);
@@ -172,7 +167,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P12::new(i2c, 0x28).unwrap().init(None, None).unwrap();
+        P12::new(i2c, 0x28).unwrap().init().unwrap();
 
         i2c_clone.done();
     }

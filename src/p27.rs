@@ -64,7 +64,7 @@ impl<E> From<E> for Error<E> {
 }
 
 use crate::WithDelay;
-impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P27<I2C, DELAY> {
+impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, Error<I2C::Error>> for P27<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
@@ -72,10 +72,8 @@ impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P27<I2C, DELAY> {
             delay,
         }
     }
-}
 
-impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
-    pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
+    fn init_inner(mut self) -> Result<Self, Error<I2C::Error>> {
         self.set_led(true)?;
 
         self.i2c
@@ -93,8 +91,9 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
         if self.whoami()? != DEVICE_ID {}
         Ok(self)
     }
+}
 
-    /// # Errors
+impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     pub fn send(&mut self, address: u16, data: &[u8]) -> Result<(), Error<I2C::Error>> {
         self.set_destination_radio_address(address)?;
         self.i2c.write(

@@ -23,19 +23,19 @@ pub struct P3<I2C> {
 }
 
 use crate::Driver;
-impl<I2C: I2c> Driver<I2C> for P3<I2C> {
+impl<I2C: I2c> Driver<I2C, I2C::Error> for P3<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-}
 
-impl<I2C: I2c> P3<I2C> {
-    pub fn init(mut self) -> Result<Self, I2C::Error> {
+    fn init_inner(mut self) -> Result<Self, I2C::Error> {
         self.i2c
             .write(self.address, &[REG_ALS_CONF, DEFAULT_SETTINGS])?;
         Ok(self)
     }
+}
 
+impl<I2C: I2c> P3<I2C> {
     pub fn read(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c.write_read(self.address, &[REG_ALS], &mut data)?;

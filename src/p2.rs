@@ -37,7 +37,7 @@ pub struct P2<I2C> {
 }
 
 use crate::Driver;
-impl<I2C: I2c> Driver<I2C> for P2<I2C> {
+impl<I2C: I2c> Driver<I2C, I2C::Error> for P2<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self {
             i2c,
@@ -48,16 +48,16 @@ impl<I2C: I2c> Driver<I2C> for P2<I2C> {
             t_fine: None,
         }
     }
-}
 
-impl<I2C: I2c> P2<I2C> {
-    pub fn init(mut self) -> Result<Self, I2C::Error> {
+    fn init_inner(mut self) -> Result<Self, I2C::Error> {
         self.load_temperature_data()?;
         self.load_pressure_data()?;
         self.load_humidity_data()?;
         Ok(self)
     }
+}
 
+impl<I2C: I2c> P2<I2C> {
     fn load_temperature_data(&mut self) -> Result<(), I2C::Error> {
         let mut dig_t: [u8; 6] = [0; 6];
         self.i2c.write_read(self.address, &[DIG_T], &mut dig_t)?;

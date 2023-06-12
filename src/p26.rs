@@ -62,15 +62,12 @@ pub enum Gravity {
 }
 
 use crate::Driver;
-impl<I2C: I2c> Driver<I2C> for P26<I2C> {
+impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P26<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-}
 
-use fixed::types::I2F14;
-impl<I2C: I2c> P26<I2C> {
-    pub fn init(mut self) -> Result<Self, Error<I2C::Error>> {
+    fn init_inner(mut self) -> Result<Self, Error<I2C::Error>> {
         if self.whoami()? != DEVICE_ID {
             return Err(Error::UnexpectedDevice);
         }
@@ -82,7 +79,10 @@ impl<I2C: I2c> P26<I2C> {
         self.set_rate(400)?;
         Ok(self)
     }
+}
 
+use fixed::types::I2F14;
+impl<I2C: I2c> P26<I2C> {
     pub fn data_ready(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
@@ -268,7 +268,7 @@ mod test {
 
         let p26 = P26 { i2c, address: 0x19 };
 
-        assert_eq!(p26.init().err(), Some(Error::UnexpectedDevice));
+        assert_eq!(p26.init_inner().err(), Some(Error::UnexpectedDevice));
 
         i2c_clone.done();
     }

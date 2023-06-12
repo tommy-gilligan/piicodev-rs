@@ -88,7 +88,7 @@ fn set_resolution(res: u8) -> (u8, u8, u32, u32) {
 }
 
 use crate::WithDelay;
-impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P11<I2C, DELAY> {
+impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, I2C::Error> for P11<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
@@ -98,17 +98,16 @@ impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P11<I2C, DELAY> {
             eeprom_coefficient: [0; 7],
         }
     }
-}
 
-use rust_decimal::prelude::*;
-impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
-    pub fn init(mut self) -> Result<Self, I2C::Error> {
+    fn init_inner(mut self) -> Result<Self, I2C::Error> {
         self.i2c.write(self.address, &[SOFT_RESET])?;
         self.delay.delay_ms(15);
         Ok(self)
     }
+}
 
-    /// # Errors
+use rust_decimal::prelude::*;
+impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
     fn read_eeprom_coefficient(&mut self, reg: u8) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c.write_read(self.address, &[reg], &mut data)?;

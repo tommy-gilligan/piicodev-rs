@@ -40,7 +40,7 @@ pub struct P29<I2C, DELAY> {
 }
 
 use crate::WithDelay;
-impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P29<I2C, DELAY> {
+impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, I2C::Error> for P29<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
@@ -48,15 +48,15 @@ impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P29<I2C, DELAY> {
             delay,
         }
     }
-}
 
-impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
-    pub fn init(mut self) -> Result<Self, I2C::Error> {
+    fn init_inner(mut self) -> Result<Self, I2C::Error> {
         self.reset()?;
         self.set_frequency(50)?;
         Ok(self)
     }
+}
 
+impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
     pub fn reset(&mut self) -> Result<(), I2C::Error> {
         self.i2c.write(self.address, &[0x00, 0x00])
     }

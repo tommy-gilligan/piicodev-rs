@@ -24,7 +24,7 @@ trait WhoAmI<I2C: I2c> {
 
 #[derive(Debug)]
 struct OutOfRange;
-trait Driver<I2C: I2c> {
+trait Driver<I2C: I2c, T> {
     fn address_check(address: u8) -> Result<(), OutOfRange> {
         if (0x08..=0x77).contains(&address) {
             Ok(())
@@ -40,9 +40,21 @@ trait Driver<I2C: I2c> {
         Self::address_check(address)?;
         Ok(Self::new_inner(i2c, address))
     }
+    fn init_inner(self) -> Result<Self, T>
+    where
+        Self: Sized,
+    {
+        Ok(self)
+    }
+    fn init(self) -> Result<Self, T>
+    where
+        Self: Sized,
+    {
+        self.init_inner()
+    }
 }
 
-trait WithDelay<I2C: I2c, DELAY: DelayUs> {
+trait WithDelay<I2C: I2c, DELAY: DelayUs, T> {
     fn address_check(address: u8) -> Result<(), OutOfRange> {
         if (0x08..=0x77).contains(&address) {
             Ok(())
@@ -57,6 +69,18 @@ trait WithDelay<I2C: I2c, DELAY: DelayUs> {
     {
         Self::address_check(address)?;
         Ok(Self::new_inner(i2c, address, delay))
+    }
+    fn init_inner(self) -> Result<Self, T>
+    where
+        Self: Sized,
+    {
+        Ok(self)
+    }
+    fn init(self) -> Result<Self, T>
+    where
+        Self: Sized,
+    {
+        self.init_inner()
     }
 }
 

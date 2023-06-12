@@ -115,7 +115,7 @@ pub struct P7<I2C, DELAY> {
 }
 
 use crate::WithDelay;
-impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P7<I2C, DELAY> {
+impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, I2C::Error> for P7<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
@@ -123,10 +123,8 @@ impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY> for P7<I2C, DELAY> {
             delay,
         }
     }
-}
 
-impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
-    pub fn init(mut self) -> Result<Self, I2C::Error> {
+    fn init_inner(mut self) -> Result<Self, I2C::Error> {
         self.reset()?;
         self.delay.delay_ms(1);
         self.i2c
@@ -143,8 +141,9 @@ impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
         self.delay.delay_ms(200);
         Ok(self)
     }
+}
 
-    /// # Errors
+impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
     pub fn reset(&mut self) -> Result<(), I2C::Error> {
         self.i2c.write(self.address, &[0x00, 0x00, 0x00])?;
         self.delay.delay_ms(100);

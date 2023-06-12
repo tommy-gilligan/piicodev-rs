@@ -37,20 +37,20 @@ pub struct P10<I2C> {
 }
 
 use crate::Driver;
-impl<I2C: I2c> Driver<I2C> for P10<I2C> {
+impl<I2C: I2c> Driver<I2C, I2C::Error> for P10<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-}
-impl<I2C: I2c> P10<I2C> {
-    pub fn init(mut self) -> Result<Self, I2C::Error> {
+
+    fn init_inner(mut self) -> Result<Self, I2C::Error> {
         self.i2c.write(self.address, &[REG_CONF, SHUTDOWN])?;
         self.i2c
             .write(self.address, &[REG_CONF, DEFAULT_SETTINGS])?;
 
         Ok(self)
     }
-
+}
+impl<I2C: I2c> P10<I2C> {
     /// # Errors
     pub fn read(&mut self) -> Result<(LinSrgb<u16>, SrgbLuma<u16>), I2C::Error> {
         let mut data_red: [u8; 2] = [0; 2];

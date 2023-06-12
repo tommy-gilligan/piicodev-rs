@@ -34,21 +34,21 @@ pub struct P19<I2C> {
 }
 
 use crate::Driver;
-impl<I2C: I2c> Driver<I2C> for P19<I2C> {
+impl<I2C: I2c> Driver<I2C, I2C::Error> for P19<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
-}
 
-impl<I2C: I2c> P19<I2C> {
-    pub fn init(mut self) -> Result<Self, I2C::Error> {
+    fn init_inner(mut self) -> Result<Self, I2C::Error> {
         self.whoami()?;
         self.set_battery_switchover(true)?;
         self.config_trickle_charger(TrickleResistance::Resistance3kΩ)?;
         self.set_trickle_charger(true)?;
         Ok(self)
     }
+}
 
+impl<I2C: I2c> P19<I2C> {
     pub fn set_battery_switchover(&mut self, switchover_enabled: bool) -> Result<(), I2C::Error> {
         let mut data: [u8; 1] = [0];
         self.i2c
