@@ -111,6 +111,17 @@ impl<I2C: I2c> P30<I2C> {
     }
 }
 
+use crate::WhoAmI;
+impl<I2C: I2c> WhoAmI<I2C> for P30<I2C> {
+    // 0x0242 578
+    fn whoami(&mut self) -> Result<u16, I2C::Error> {
+        let mut data: [u8; 2] = [0; 2];
+        self.i2c
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
+        Ok(u16::from_be_bytes(data))
+    }
+}
+
 use crate::{Atmel, SetAddressError};
 impl<I2C: I2c> Atmel<I2C> for P30<I2C> {
     fn get_led(&mut self) -> Result<bool, I2C::Error> {
@@ -142,14 +153,6 @@ impl<I2C: I2c> Atmel<I2C> for P30<I2C> {
         Ok((maj_data[0], min_data[0]))
     }
 
-    // 0x0242 578
-    fn whoami(&mut self) -> Result<u16, I2C::Error> {
-        let mut data: [u8; 2] = [0; 2];
-        self.i2c
-            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-        Ok(u16::from_be_bytes(data))
-    }
-
     // should somehow destroy instance after call
     fn set_address(&mut self, new_address: u8) -> Result<(), SetAddressError<I2C::Error>> {
         if !(0x08..=0x77).contains(&new_address) {
@@ -159,6 +162,35 @@ impl<I2C: I2c> Atmel<I2C> for P30<I2C> {
             .write(self.address, &[REG_I2C_ADDRESS, new_address])
             .map_err(SetAddressError::I2cError)?;
         Ok(())
+    }
+}
+
+#[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
+mod whoami_test {
+    extern crate std;
+    use std::vec;
+    extern crate embedded_hal;
+    extern crate embedded_hal_mock;
+
+    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+
+    use crate::p30::P30;
+    use crate::WhoAmI;
+
+    #[test]
+    pub fn whoami() {
+        let expectations = [I2cTransaction::write_read(
+            0x35,
+            vec![0x01],
+            vec![0x01, 0x10],
+        )];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p30 = P30 { i2c, address: 0x35 };
+
+        assert_eq!(p30.whoami(), Ok(0x0110));
+        i2c_clone.done();
     }
 }
 
@@ -219,22 +251,6 @@ mod atmel_test {
         let mut p30 = P30 { i2c, address: 0x35 };
 
         assert_eq!(p30.get_led(), Ok(true));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(
-            0x35,
-            vec![0x01],
-            vec![0x01, 0x10],
-        )];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p30 = P30 { i2c, address: 0x35 };
-
-        assert_eq!(p30.whoami(), Ok(0x0110));
         i2c_clone.done();
     }
 

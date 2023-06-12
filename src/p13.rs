@@ -48,6 +48,18 @@ impl<I2C: I2c> Driver<I2C> for P13<I2C> {
     }
 }
 
+use crate::WhoAmI;
+impl<I2C: I2c> WhoAmI<I2C> for P13<I2C> {
+    // 0x0084 132
+    /// # Errors
+    fn whoami(&mut self) -> Result<u16, I2C::Error> {
+        let mut data: [u8; 1] = [0];
+        self.i2c
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
+        Ok(u16::from_be_bytes([0, data[0]]))
+    }
+}
+
 use crate::{Atmel, SetAddressError};
 impl<I2C: I2c> Atmel<I2C> for P13<I2C> {
     /// # Errors
@@ -58,15 +70,6 @@ impl<I2C: I2c> Atmel<I2C> for P13<I2C> {
             self.i2c.write(self.address, &[REG_LED, 0])?;
         }
         Ok(())
-    }
-
-    // 0x0084 132
-    /// # Errors
-    fn whoami(&mut self) -> Result<u16, I2C::Error> {
-        let mut data: [u8; 1] = [0];
-        self.i2c
-            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-        Ok(u16::from_be_bytes([0, data[0]]))
     }
 
     fn firmware(&mut self) -> Result<(u8, u8), I2C::Error> {
@@ -127,7 +130,7 @@ impl<I2C: I2c> SmartLedsWrite for P13<I2C> {
 }
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
-mod atmel_test {
+mod whoami_test {
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -135,7 +138,7 @@ mod atmel_test {
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p13::P13;
-    use crate::{Atmel, SetAddressError};
+    use crate::WhoAmI;
 
     #[test]
     pub fn whoami() {
@@ -148,6 +151,18 @@ mod atmel_test {
 
         i2c_clone.done();
     }
+}
+
+#[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
+mod atmel_test {
+    extern crate std;
+    use std::vec;
+    extern crate embedded_hal;
+    extern crate embedded_hal_mock;
+    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+
+    use crate::p13::P13;
+    use crate::{Atmel, SetAddressError};
 
     #[test]
     pub fn set_led_on() {

@@ -267,6 +267,17 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 }
 
+use crate::WhoAmI;
+impl<I2C: I2c, DELAY: DelayUs> WhoAmI<I2C> for P27<I2C, DELAY> {
+    // 0x01EF 495
+    /// # Errors
+    fn whoami(&mut self) -> Result<u16, I2C::Error> {
+        let mut maj: [u8; 2] = [0, 0];
+        self.i2c.write_read(self.address, &[REG_WHOAMI], &mut maj)?;
+        Ok(u16::from_be_bytes(maj))
+    }
+}
+
 use crate::{Atmel, SetAddressError};
 impl<I2C: I2c, DELAY: DelayUs> Atmel<I2C> for P27<I2C, DELAY> {
     fn firmware(&mut self) -> Result<(u8, u8), I2C::Error> {
@@ -300,14 +311,6 @@ impl<I2C: I2c, DELAY: DelayUs> Atmel<I2C> for P27<I2C, DELAY> {
         Ok(())
     }
 
-    // 0x01EF 495
-    /// # Errors
-    fn whoami(&mut self) -> Result<u16, I2C::Error> {
-        let mut maj: [u8; 2] = [0, 0];
-        self.i2c.write_read(self.address, &[REG_WHOAMI], &mut maj)?;
-        Ok(u16::from_be_bytes(maj))
-    }
-
     fn set_address(&mut self, new_address: u8) -> Result<(), SetAddressError<I2C::Error>> {
         if !(0x08..=0x77).contains(&new_address) {
             return Err(SetAddressError::ArgumentError);
@@ -316,6 +319,34 @@ impl<I2C: I2c, DELAY: DelayUs> Atmel<I2C> for P27<I2C, DELAY> {
             .write(self.address, &[REG_I2C_ADDRESS, new_address])
             .map_err(SetAddressError::I2cError)?;
         Ok(())
+    }
+}
+
+#[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
+mod whoami_test {
+    extern crate std;
+    use std::vec;
+    extern crate embedded_hal;
+    extern crate embedded_hal_mock;
+    use embedded_hal_mock::delay::MockNoop;
+    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+
+    use crate::p27::P27;
+    use crate::WhoAmI;
+    #[test]
+    pub fn whoami() {
+        let expectations = [I2cTransaction::write_read(0x09, vec![0x01], vec![1, 2])];
+        let i2c = I2cMock::new(&expectations);
+        let mut i2c_clone = i2c.clone();
+
+        let mut p27 = P27 {
+            i2c,
+            delay: MockNoop {},
+            address: 0x09,
+        };
+        assert_eq!(p27.whoami(), Ok(258));
+
+        i2c_clone.done();
     }
 }
 
@@ -392,22 +423,6 @@ mod atmel_test {
         };
 
         assert_eq!(p27.get_led(), Ok(true));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(0x09, vec![0x01], vec![1, 2])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p27 = P27 {
-            i2c,
-            delay: MockNoop {},
-            address: 0x09,
-        };
-        assert_eq!(p27.whoami(), Ok(258));
-
         i2c_clone.done();
     }
 
