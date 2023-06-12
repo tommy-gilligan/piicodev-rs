@@ -13,9 +13,12 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module
 //! [Official Product Site]: https://piico.dev/p26
 //! [Datasheet]: https://core-electronics.com.au/attachments/uploads/lis3dh-datasheet.pdf
-use embedded_hal::i2c::I2c;
 
-const REG_WHOAMI: u8 = 0x0F;
+use embedded_hal::i2c::I2c;
+use num_enum::IntoPrimitive;
+use crate::Driver;
+use fixed::types::I2F14;
+
 const REG_CONTROL1: u8 = 0x20;
 const REG_CONTROL3: u8 = 0x22;
 const REG_CONTROL4: u8 = 0x23;
@@ -26,8 +29,6 @@ const INT1_SRC: u8 = 0x31;
 const CLICK_CFG: u8 = 0x38;
 const CLICK_SRC: u8 = 0x39;
 const CLICK_THS: u8 = 0x3A;
-const DEVICE_ID: u8 = 0x33;
-use num_enum::IntoPrimitive;
 
 pub struct P26<I2C> {
     i2c: I2C,
@@ -38,7 +39,6 @@ pub struct P26<I2C> {
 pub enum Error<E> {
     I2cError(E),
     ArgumentError,
-    UnexpectedDevice,
 }
 
 #[derive(IntoPrimitive)]
@@ -61,17 +61,12 @@ pub enum Gravity {
     EarthTimes2 = 0b0000_0000,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P26<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 
     fn init_inner(mut self) -> Result<Self, Error<I2C::Error>> {
-        if self.whoami()? != DEVICE_ID {
-            return Err(Error::UnexpectedDevice);
-        }
-
         self.i2c.write(self.address, &[REG_CONTROL1, 0x07])?;
         self.i2c.write(self.address, &[REG_CONTROL4, 0x88])?;
 
@@ -81,20 +76,6 @@ impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P26<I2C> {
     }
 }
 
-use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C, u8> for P26<I2C> {
-    const EXPECTED_WHOAMI: u8 = 0x33;
-
-    fn whoami(&mut self) -> Result<u8, I2C::Error> {
-        let mut data: [u8; 1] = [0; 1];
-        self.i2c
-            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-
-        Ok(data[0])
-    }
-}
-
-use fixed::types::I2F14;
 impl<I2C: I2c> P26<I2C> {
     pub fn data_ready(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
@@ -236,7 +217,6 @@ impl<I2C: I2c> P26<I2C> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
-    use crate::WhoAmI;
     use fixed::types::I2F14;
     extern crate std;
     use std::vec;
@@ -250,7 +230,6 @@ mod test {
     #[test]
     pub fn new() {
         let expectations = [
-            I2cTransaction::write_read(0x19, vec![0x0F], vec![0x33]),
             I2cTransaction::write(0x19, vec![0x20, 0x07]),
             I2cTransaction::write(0x19, vec![0x23, 0x88]),
             I2cTransaction::write_read(0x19, vec![0xA3], vec![136]),
@@ -262,19 +241,6 @@ mod test {
         let mut i2c_clone = i2c.clone();
 
         P26::new(i2c, 0x19).unwrap().init().unwrap();
-
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn new_unexpected_device() {
-        let expectations = [I2cTransaction::write_read(0x19, vec![0x0F], vec![0x32])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let p26 = P26 { i2c, address: 0x19 };
-
-        assert_eq!(p26.init_inner().err(), Some(Error::UnexpectedDevice));
 
         i2c_clone.done();
     }
@@ -318,18 +284,6 @@ mod test {
         let mut p26 = P26 { i2c, address: 0x19 };
 
         assert_eq!(p26.set_rate(401), Err(Error::ArgumentError));
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(0x19, vec![0x0F], vec![0x33])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p26 = P26 { i2c, address: 0x19 };
-
-        assert_eq!(p26.whoami(), Ok(0x33));
         i2c_clone.done();
     }
 
@@ -501,3 +455,5 @@ mod test {
         i2c_clone.done();
     }
 }
+
+pub mod whoami;

@@ -11,14 +11,15 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-RV3028-MicroPython-Module
 //! [Official Product Site]: https://piico.dev/p19
 //! [Datasheet]: https://www.microcrystal.com/fileadmin/Media/Products/RTC/App.Manual/RV-3028-C7_App-Manual.pdf
+
 use embedded_hal::i2c::I2c;
+use num_enum::IntoPrimitive;
+use crate::Driver;
 
 const REG_STATUS: u8 = 0x0E;
 const REG_UNIX: u8 = 0x1B;
-const REG_ID: u8 = 0x28;
 const REG_EEPROM_BACKUP: u8 = 0x37;
 
-use num_enum::IntoPrimitive;
 #[derive(IntoPrimitive)]
 #[repr(u8)]
 pub enum TrickleResistance {
@@ -33,29 +34,16 @@ pub struct P19<I2C> {
     address: u8,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, I2C::Error> for P19<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 
     fn init_inner(mut self) -> Result<Self, I2C::Error> {
-        self.whoami()?;
         self.set_battery_switchover(true)?;
         self.config_trickle_charger(TrickleResistance::Resistance3kΩ)?;
         self.set_trickle_charger(true)?;
         Ok(self)
-    }
-}
-
-use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C, u8> for P19<I2C> {
-    const EXPECTED_WHOAMI: u8 = 0;
-
-    fn whoami(&mut self) -> Result<u8, I2C::Error> {
-        let mut data: [u8; 1] = [0];
-        self.i2c.write_read(self.address, &[REG_ID], &mut data)?;
-        Ok(data[0] >> 4)
     }
 }
 
@@ -142,7 +130,6 @@ impl<I2C: I2c> P19<I2C> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
-    use crate::WhoAmI;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -154,7 +141,6 @@ mod test {
     #[test]
     pub fn new() {
         let expectations = [
-            I2cTransaction::write_read(0x52, vec![0x28], vec![201]),
             I2cTransaction::write_read(0x52, vec![0x37], vec![0x19]),
             I2cTransaction::write(0x52, vec![0x37, 0x15]),
             I2cTransaction::write_read(0x52, vec![0x37], vec![0x00]),
@@ -249,18 +235,6 @@ mod test {
     }
 
     #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(0x52, vec![0x28], vec![201])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p19 = P19 { i2c, address: 0x52 };
-
-        assert_eq!(p19.whoami(), Ok(12));
-        i2c_clone.done();
-    }
-
-    #[test]
     pub fn get_unix_time() {
         let expectations = [I2cTransaction::write_read(
             0x52,
@@ -322,3 +296,5 @@ mod test {
         i2c_clone.done();
     }
 }
+
+pub mod whoami;

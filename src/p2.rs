@@ -11,9 +11,11 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-BME280-MicroPython-Module
 //! [Official Product Site]: https://piico.dev/p2
 //! [Datasheet]: https://core-electronics.com.au/attachments/uploads/bme280.pdf
+
 use cast::u32;
 use core::num::NonZeroI64;
 use embedded_hal::i2c::I2c;
+use crate::Driver;
 
 const REG_TEMP: u8 = 0xFA;
 const REG_PRESS: u8 = 0xF7;
@@ -36,7 +38,6 @@ pub struct P2<I2C> {
     pub t_fine: Option<i32>,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, I2C::Error> for P2<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self {

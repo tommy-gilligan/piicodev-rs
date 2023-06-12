@@ -11,9 +11,11 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Buzzer-MicroPython-Module/tree/f33f1b08d48f8745377f929bd19472bb967bb36b
 //! [Official Product Site]: https://piico.dev/p18
 //! [Datasheet]: https://datasheet.lcsc.com/lcsc/1811141116_Jiangsu-Huaneng-Elec-MLT-8540H_C95298.pdf
+
 use core::num::TryFromIntError;
 use embedded_hal::i2c::I2c;
 use fugit::{ExtU32, Hertz, MillisDuration, RateExtU32};
+use crate::{Driver, Atmel, SetAddressError};
 
 const REG_STATUS: u8 = 0x01;
 const REG_FIRM_MAJ: u8 = 0x02;
@@ -22,7 +24,6 @@ const REG_I2C_ADDRESS: u8 = 0x04;
 const REG_TONE: u8 = 0x05;
 const REG_LED: u8 = 0x07;
 const REG_SELF_TEST: u8 = 0x09;
-const REG_WHOAMI: u8 = 0x11;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error<E> {
@@ -41,7 +42,6 @@ pub struct P18<I2C> {
     address: u8,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, core::convert::Infallible> for P18<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
@@ -102,19 +102,6 @@ impl<I2C: I2c> P18<I2C> {
     }
 }
 
-use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C, u8> for P18<I2C> {
-    const EXPECTED_WHOAMI: u8 = 0x51;
-
-    fn whoami(&mut self) -> Result<u8, I2C::Error> {
-        let mut data: [u8; 1] = [0; 1];
-        self.i2c
-            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-        Ok(data[0])
-    }
-}
-
-use crate::{Atmel, SetAddressError};
 impl<I2C: I2c> Atmel<I2C> for P18<I2C> {
     // broken
     fn get_led(&mut self) -> Result<bool, I2C::Error> {
@@ -154,30 +141,6 @@ impl<I2C: I2c> Atmel<I2C> for P18<I2C> {
             .write(self.address, &[REG_I2C_ADDRESS, new_address])
             .map_err(SetAddressError::I2cError)?;
         Ok(())
-    }
-}
-
-#[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
-mod whoami_test {
-    extern crate std;
-    use std::vec;
-    extern crate embedded_hal;
-    extern crate embedded_hal_mock;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-
-    use crate::p18::P18;
-    use crate::WhoAmI;
-
-    #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(0x5C, vec![0x11], vec![0x23])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p18 = P18 { i2c, address: 0x5C };
-
-        assert_eq!(p18.whoami(), Ok(0x23));
-        i2c_clone.done();
     }
 }
 
@@ -400,3 +363,5 @@ mod test {
         i2c_clone.done();
     }
 }
+
+pub mod whoami;

@@ -11,32 +11,25 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-TMP117-MicroPython-Module/tree/2678a75ac4efbc8c9a16ceb55335108b04460996
 //! [Official Product Site]: https://piico.dev/p1
 //! [Datasheet]: https://www.ti.com/product/TMP117
+
 use embedded_hal::i2c::I2c;
+use crate::Driver;
+use fixed::types::I9F7;
 
 const REG_TEMPC: u8 = 0x0;
 
-/// Driver for PiicoDev P1
-///
-/// Typical usage:
-///
-/// 1. Create an instance through [`P1::new`]
-/// 2. Read a temperature from the instance with [`P1::read`]
 pub struct P1<I2C> {
     i2c: I2C,
     address: u8,
 }
-use crate::Driver;
-use fixed::types::I9F7;
+
 impl<I2C: I2c> Driver<I2C, core::convert::Infallible> for P1<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 }
+
 impl<I2C: I2c> P1<I2C> {
-    /// Reads a [`Temperature`] from the P1
-    /// # Errors
-    ///
-    /// Will return `I2C::Error` for any I2C communication errors.
     pub fn read(&mut self) -> Result<I9F7, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         self.i2c.write_read(self.address, &[REG_TEMPC], &mut data)?;

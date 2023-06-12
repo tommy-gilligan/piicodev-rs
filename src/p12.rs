@@ -11,7 +11,10 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-CAP1203-MicroPython-Module/tree/f2a061b83e020ef96865ba97215793c02717747e
 //! [Official Product Site]: https://piico.dev/p12
 //! [Datasheet]: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/00001572B.pdf
+
 use embedded_hal::i2c::I2c;
+use num_enum::IntoPrimitive;
+use crate::Driver;
 
 const MAIN_CONTROL: u8 = 0x00;
 const GENERAL_STATUS: u8 = 0x02;
@@ -22,7 +25,6 @@ const SENSOR_INPUT_3_DELTA_COUNT: u8 = 0x12;
 const SENSITIVITY_CONTROL: u8 = 0x1F;
 const MULTIPLE_TOUCH_CONFIG: u8 = 0x2A;
 
-use num_enum::IntoPrimitive;
 #[derive(IntoPrimitive)]
 #[repr(u8)]
 pub enum TouchMode {
@@ -47,7 +49,6 @@ pub struct P12<I2C> {
     address: u8,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P12<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }

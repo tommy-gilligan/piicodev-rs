@@ -11,8 +11,10 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-QMC6310-MicroPython-Module
 //! [Official Product Site]: https://piico.dev/p15
 //! [Datasheet]: https://datasheet.lcsc.com/lcsc/2007101835_QST-QMC6310U_C669299.pdf
+
 use embedded_hal::i2c::I2c;
 use rust_decimal::prelude::*;
+use crate::Driver;
 
 const REG_XOUT: u8 = 0x01;
 const REG_YOUT: u8 = 0x03;
@@ -31,7 +33,6 @@ pub struct P15<I2C> {
     address: u8,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, I2C::Error> for P15<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }

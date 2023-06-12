@@ -11,9 +11,11 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Servo-Driver-MicroPython-Module/tree/e131dfa47b471bd6db5c2247d57f57233b5edfd9
 //! [Official Product Site]: https://piico.dev/p29
 //! [Datasheet]: https://www.nxp.com/products/power-management/lighting-driver-and-controller-ics/led-controllers/16-channel-12-bit-pwm-fm-plus-ic-bus-led-controller:PCA9685
+
 use cast::{u16, u32, u8};
 use core::cmp;
 use embedded_hal::{delay::DelayUs, i2c::I2c};
+use crate::WithDelay;
 
 const FREQ: u32 = 50;
 const PERIOD: u32 = 1_000_000 / FREQ;
@@ -39,7 +41,6 @@ pub struct P29<I2C, DELAY> {
     delay: DELAY,
 }
 
-use crate::WithDelay;
 impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, I2C::Error> for P29<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {

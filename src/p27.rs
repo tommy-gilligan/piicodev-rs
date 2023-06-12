@@ -11,12 +11,13 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Transceiver-MicroPython-Module/tree/2c3e4423b86cfcb372a998f5bbc74319162b9a85
 //! [Official Product Site]: https://piico.dev/p27
 //! [Datasheet]: https://www.hoperf.com/data/upload/portal/20190307/RFM69HCW-V1.1.pdf
+
 use cast::usize;
 use core::num::TryFromIntError;
 use embedded_hal::{delay::DelayUs, i2c::I2c};
 use fugit::{Hertz, RateExtU32};
+use crate::{WithDelay, Atmel, SetAddressError};
 
-const REG_WHOAMI: u8 = 0x01;
 const REG_FIRM_MAJ: u8 = 0x02;
 const REG_FIRM_MIN: u8 = 0x03;
 const REG_I2C_ADDRESS: u8 = 0x04;
@@ -42,7 +43,6 @@ const RFM69_REG_FRFMID: u8 = 0x08;
 const RFM69_REG_FRFLSB: u8 = 0x09;
 const F_STEP: u32 = 61;
 const F_XOSC: u32 = 32_000_000;
-const DEVICE_ID: u16 = 495;
 
 pub struct P27<I2C, DELAY> {
     i2c: I2C,
@@ -63,7 +63,6 @@ impl<E> From<E> for Error<E> {
     }
 }
 
-use crate::WithDelay;
 impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, Error<I2C::Error>> for P27<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
@@ -88,7 +87,6 @@ impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, Error<I2C::Error>> for P27<
         self.set_bit_rate(9_600)?;
 
         self.set_tx_power(20)?;
-        if self.whoami()? != DEVICE_ID {}
         Ok(self)
     }
 }
@@ -266,18 +264,6 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
     }
 }
 
-use crate::WhoAmI;
-impl<I2C: I2c, DELAY: DelayUs> WhoAmI<I2C, u16> for P27<I2C, DELAY> {
-    const EXPECTED_WHOAMI: u16 = 0x01EF;
-
-    fn whoami(&mut self) -> Result<u16, I2C::Error> {
-        let mut maj: [u8; 2] = [0, 0];
-        self.i2c.write_read(self.address, &[REG_WHOAMI], &mut maj)?;
-        Ok(u16::from_be_bytes(maj))
-    }
-}
-
-use crate::{Atmel, SetAddressError};
 impl<I2C: I2c, DELAY: DelayUs> Atmel<I2C> for P27<I2C, DELAY> {
     fn firmware(&mut self) -> Result<(u8, u8), I2C::Error> {
         let mut maj_data: [u8; 1] = [0; 1];
@@ -318,34 +304,6 @@ impl<I2C: I2c, DELAY: DelayUs> Atmel<I2C> for P27<I2C, DELAY> {
             .write(self.address, &[REG_I2C_ADDRESS, new_address])
             .map_err(SetAddressError::I2cError)?;
         Ok(())
-    }
-}
-
-#[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
-mod whoami_test {
-    extern crate std;
-    use std::vec;
-    extern crate embedded_hal;
-    extern crate embedded_hal_mock;
-    use embedded_hal_mock::delay::MockNoop;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-
-    use crate::p27::P27;
-    use crate::WhoAmI;
-    #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(0x09, vec![0x01], vec![1, 2])];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p27 = P27 {
-            i2c,
-            delay: MockNoop {},
-            address: 0x09,
-        };
-        assert_eq!(p27.whoami(), Ok(258));
-
-        i2c_clone.done();
     }
 }
 
@@ -529,7 +487,6 @@ mod test {
             I2cTransaction::write(0x09, vec![0x99, 0x05]),
             I2cTransaction::write_read(0x09, vec![0x25], vec![0x01]),
             I2cTransaction::write(0x09, vec![0x93, 20]),
-            I2cTransaction::write_read(0x09, vec![0x01], vec![0x01, 0xEF]),
         ];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
@@ -946,3 +903,5 @@ mod test {
         i2c_clone.done();
     }
 }
+
+pub mod whoami;

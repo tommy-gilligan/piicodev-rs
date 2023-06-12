@@ -13,8 +13,8 @@
 //! [Datasheet]: https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf
 
 use embedded_hal::i2c::I2c;
+use crate::{Driver, Atmel, SetAddressError};
 
-const REG_WHOAMI: u8 = 0x01;
 const REG_FIRM_MAJ: u8 = 0x02;
 const REG_FIRM_MIN: u8 = 0x03;
 const REG_I2C_ADDRESS: u8 = 0x04;
@@ -23,7 +23,6 @@ const REG_PERIOD: u8 = 0x06;
 const REG_LED: u8 = 0x07;
 const REG_STATUS: u8 = 0x08;
 const REG_SELF_TEST: u8 = 0x09;
-const DEVICE_ID: u16 = 578;
 
 pub struct P30<I2C> {
     i2c: I2C,
@@ -43,16 +42,12 @@ impl<E> From<E> for Error<E> {
     }
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P30<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 
     fn init_inner(mut self) -> Result<Self, Error<I2C::Error>> {
-        if self.whoami()? != DEVICE_ID {
-            return Err(Error::UnexpectedDevice);
-        }
         self.set_period(20)?;
         self.set_led(true)?;
 
@@ -111,19 +106,6 @@ impl<I2C: I2c> P30<I2C> {
     }
 }
 
-use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C, u16> for P30<I2C> {
-    const EXPECTED_WHOAMI: u16 = 0x0242;
-
-    fn whoami(&mut self) -> Result<u16, I2C::Error> {
-        let mut data: [u8; 2] = [0; 2];
-        self.i2c
-            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-        Ok(u16::from_be_bytes(data))
-    }
-}
-
-use crate::{Atmel, SetAddressError};
 impl<I2C: I2c> Atmel<I2C> for P30<I2C> {
     fn get_led(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
@@ -163,35 +145,6 @@ impl<I2C: I2c> Atmel<I2C> for P30<I2C> {
             .write(self.address, &[REG_I2C_ADDRESS, new_address])
             .map_err(SetAddressError::I2cError)?;
         Ok(())
-    }
-}
-
-#[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
-mod whoami_test {
-    extern crate std;
-    use std::vec;
-    extern crate embedded_hal;
-    extern crate embedded_hal_mock;
-
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
-
-    use crate::p30::P30;
-    use crate::WhoAmI;
-
-    #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(
-            0x35,
-            vec![0x01],
-            vec![0x01, 0x10],
-        )];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p30 = P30 { i2c, address: 0x35 };
-
-        assert_eq!(p30.whoami(), Ok(0x0110));
-        i2c_clone.done();
     }
 }
 
@@ -317,7 +270,7 @@ mod test {
 
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::p30::{Error, P30};
+    use crate::p30::P30;
 
     #[test]
     pub fn self_test_ok() {
@@ -414,7 +367,6 @@ mod test {
     #[test]
     pub fn new() {
         let expectations = [
-            I2cTransaction::write_read(0x35, vec![0x01], vec![0x02, 0x42]),
             I2cTransaction::write(0x35, vec![0x86, 0x00, 0x14]),
             I2cTransaction::write(0x35, vec![0x87, 0x01]),
         ];
@@ -423,22 +375,6 @@ mod test {
 
         P30::new(i2c, 0x35).unwrap().init().unwrap();
 
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn new_unexpected_device() {
-        let expectations = [I2cTransaction::write_read(
-            0x35,
-            vec![0x01],
-            vec![0x01, 0x10],
-        )];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let p30 = P30 { i2c, address: 0x35 };
-
-        assert_eq!(p30.init_inner().err(), Some(Error::UnexpectedDevice));
         i2c_clone.done();
     }
 
@@ -462,3 +398,5 @@ mod test {
     //     i2c_clone.done();
     // }
 }
+
+pub mod whoami;

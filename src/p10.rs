@@ -11,32 +11,24 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-VEML6040-MicroPython-Module/tree/8cb4fc8c2534a9b67a9cae50527892cd902c4b45
 //! [Official Product Site]: https://piico.dev/p10
 //! [Datasheet]: https://www.vishay.com/docs/84276/veml6040.pdf
+
 use embedded_hal::i2c::I2c;
 use palette::{LinSrgb, SrgbLuma};
+use crate::Driver;
 
 const REG_CONF: u8 = 0x00;
 const REG_RED: u8 = 0x08;
 const REG_GREEN: u8 = 0x09;
 const REG_BLUE: u8 = 0x0A;
 const REG_WHITE: u8 = 0x0B;
-// initialise gain:1x, integration 40ms, Green Sensitivity 0.25168, Max. Detectable Lux 16496
 const DEFAULT_SETTINGS: u8 = 0x00;
-// No Trig, Auto mode, enabled.
-// Disable colour sensor
 const SHUTDOWN: u8 = 0x01;
 
-/// Driver for PiicoDev P10
-///
-/// Typical usage:
-///
-/// 1. Create an instance through [`P10::new`]
-/// 2. Read color information from the instance with [`P10::read`]
 pub struct P10<I2C> {
     i2c: I2C,
     address: u8,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, I2C::Error> for P10<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
@@ -50,8 +42,8 @@ impl<I2C: I2c> Driver<I2C, I2C::Error> for P10<I2C> {
         Ok(self)
     }
 }
+
 impl<I2C: I2c> P10<I2C> {
-    /// # Errors
     pub fn read(&mut self) -> Result<(LinSrgb<u16>, SrgbLuma<u16>), I2C::Error> {
         let mut data_red: [u8; 2] = [0; 2];
         let mut data_green: [u8; 2] = [0; 2];

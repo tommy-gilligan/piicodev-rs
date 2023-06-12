@@ -11,10 +11,10 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-ENS160-MicroPython-Module
 //! [Official Product Site]: https://piico.dev/p23
 //! [Datasheet]: https://github.com/CoreElectronics/CE-PiicoDev-Air-Quality-Sensor-ENS160/raw/main/Documents/ENS160-Datasheet%20v1.1.pdf
+
 use embedded_hal::i2c::I2c;
 use fixed::types::{U10F6, U7F9};
-
-const REG_WHOAMI: u8 = 0x00;
+use crate::Driver;
 
 const REG_OPMODE: u8 = 0x10;
 const REG_CONFIG: u8 = 0x11;
@@ -22,7 +22,6 @@ const REG_TEMP_IN: u8 = 0x13;
 const REG_RH_IN: u8 = 0x15;
 const REG_DEVICE_STATUS: u8 = 0x20;
 
-const DEVICE_ID: u16 = 0x0160;
 const VAL_OPMODE_STANDARD: u8 = 0x02;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,35 +49,18 @@ pub struct P23<I2C> {
     address: u8,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P23<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
     }
 
     fn init_inner(mut self) -> Result<Self, Error<I2C::Error>> {
-        if self.whoami()? != DEVICE_ID {
-            return Err(Error::UnexpectedDevice);
-        }
         self.i2c
             .write(self.address, &[REG_OPMODE, VAL_OPMODE_STANDARD])?;
         self.i2c.write(self.address, &[REG_CONFIG, 0x00])?;
         self.set_temperature(U10F6::lit("298.15"))?;
         self.set_humidity(U7F9::lit("50"))?;
         Ok(self)
-    }
-}
-
-use crate::WhoAmI;
-impl<I2C: I2c> WhoAmI<I2C, u16> for P23<I2C> {
-    const EXPECTED_WHOAMI: u16 = 0x0160;
-
-    fn whoami(&mut self) -> Result<u16, I2C::Error> {
-        let mut data: [u8; 2] = [0; 2];
-        self.i2c
-            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
-
-        Ok(u16::from_le_bytes(data))
     }
 }
 
@@ -126,7 +108,6 @@ impl<I2C: I2c> P23<I2C> {
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
-    use crate::WhoAmI;
     use fixed::types::{U10F6, U7F9};
     extern crate std;
     use std::vec;
@@ -134,12 +115,11 @@ mod test {
     extern crate embedded_hal_mock;
     use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
-    use crate::p23::{AirQuality, Error, P23};
+    use crate::p23::{AirQuality, P23};
 
     #[test]
     pub fn new() {
         let expectations = [
-            I2cTransaction::write_read(0x53, vec![0x00], vec![0x60, 0x01]),
             I2cTransaction::write(0x53, vec![0x10, 0x02]),
             I2cTransaction::write(0x53, vec![0x11, 0x00]),
             I2cTransaction::write(0x53, vec![0x13, 0x8A, 0x4A]),
@@ -149,22 +129,6 @@ mod test {
         let mut i2c_clone = i2c.clone();
 
         P23::new(i2c, 0x53).unwrap().init().unwrap();
-
-        i2c_clone.done();
-    }
-
-    #[test]
-    pub fn new_unexpected_device() {
-        let expectations = [I2cTransaction::write_read(
-            0x53,
-            vec![0x00],
-            vec![0x23, 0x86],
-        )];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let p23 = P23 { i2c, address: 0x53 };
-        assert_eq!(p23.init_inner().err(), Some(Error::UnexpectedDevice));
 
         i2c_clone.done();
     }
@@ -221,22 +185,6 @@ mod test {
     }
 
     #[test]
-    pub fn whoami() {
-        let expectations = [I2cTransaction::write_read(
-            0x53,
-            vec![0x00],
-            vec![0x23, 0x86],
-        )];
-        let i2c = I2cMock::new(&expectations);
-        let mut i2c_clone = i2c.clone();
-
-        let mut p23 = P23 { i2c, address: 0x53 };
-
-        assert_eq!(p23.whoami(), Ok(0x8623));
-        i2c_clone.done();
-    }
-
-    #[test]
     pub fn data_ready_true() {
         let expectations = [I2cTransaction::write_read(
             0x53,
@@ -268,3 +216,5 @@ mod test {
         i2c_clone.done();
     }
 }
+
+pub mod whoami;

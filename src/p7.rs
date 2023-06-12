@@ -11,7 +11,9 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-VL53L1X-MicroPython-Module/tree/75e6f56170bd57c07f948f3c62e96b47c07c1ef1
 //! [Official Product Site]: https://piico.dev/p7
 //! [Datasheet]: https://www.st.com/resource/en/datasheet/vl53l1x.pdf
+
 use embedded_hal::{delay::DelayUs, i2c::I2c};
+use crate::WithDelay;
 
 const VL51L1X_DEFAULT_CONFIGURATION: [u8; 93] = [
     0x00, 0x2D,
@@ -114,7 +116,6 @@ pub struct P7<I2C, DELAY> {
     delay: DELAY,
 }
 
-use crate::WithDelay;
 impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, I2C::Error> for P7<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {

@@ -11,11 +11,13 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-SSD1306-MicroPython-Module/tree/eba37787ef6630fc93784da8dc7a999cfa4f1d0b
 //! [Official Product Site]: https://piico.dev/p14
 //! [Datasheet]: https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
+
 use embedded_graphics::{
     draw_target::DrawTarget, geometry::Size, pixelcolor::BinaryColor, prelude::OriginDimensions,
     Pixel,
 };
 use embedded_hal::i2c::I2c;
+use crate::Driver;
 
 const SET_COL_ADDR: u8 = 0x21;
 const SET_PAGE_ADDR: u8 = 0x22;
@@ -76,7 +78,6 @@ pub struct P14<I2C> {
     framebuffer: [u8; BUFFER_SIZE],
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, I2C::Error> for P14<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self {

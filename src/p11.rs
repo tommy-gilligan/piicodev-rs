@@ -11,6 +11,7 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-MS5637-MicroPython-Module/tree/47c7c30d65ee9c189202e949030edcd816f4bfa7
 //! [Official Product Site]: https://piico.dev/p11
 //! [Datasheet]: https://www.te.com/commerce/DocumentDelivery/DDEController?Action=showdoc&DocId=Data+Sheet%7FMS5637-02BA03%7FB1%7Fpdf%7FEnglish%7FENG_DS_MS5637-02BA03_B1.pdf%7FCAT-BLPS0037
+
 use cast::usize;
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
@@ -38,16 +39,6 @@ const MS5637_START_TEMPERATURE_ADC_CONVERSION: u8 = 0x50;
 const MS5637_START_PRESSURE_ADC_CONVERSION: u8 = 0x40;
 const MS5637_CONVERSION_OSR_MASK: u8 = 0x0F;
 
-#[expect(dead_code)]
-const RESOLUTION_OSR_256: u8 = 0;
-#[expect(dead_code)]
-const RESOLUTION_OSR_512: u8 = 1;
-#[expect(dead_code)]
-const RESOLUTION_OSR_1024: u8 = 2;
-#[expect(dead_code)]
-const RESOLUTION_OSR_2048: u8 = 3;
-#[expect(dead_code)]
-const RESOLUTION_OSR_4096: u8 = 4;
 const RESOLUTION_OSR_8192: u8 = 5;
 
 const MS5637_PRESSURE_SENSITIVITY_INDEX: usize = 1;
@@ -57,17 +48,11 @@ const MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX: usize = 4;
 const MS5637_REFERENCE_TEMPERATURE_INDEX: usize = 5;
 const MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX: usize = 6;
 
-// 0.001
 const MS5637_CONV_TIME_OSR_256: u32 = 1;
-// 0.002
 const MS5637_CONV_TIME_OSR_512: u32 = 2;
-// 0.003
 const MS5637_CONV_TIME_OSR_1024: u32 = 3;
-// 0.005
 const MS5637_CONV_TIME_OSR_2048: u32 = 5;
-// 0.009
 const MS5637_CONV_TIME_OSR_4096: u32 = 9;
-// 0.017
 const MS5637_CONV_TIME_OSR_8192: u32 = 17;
 
 fn set_resolution(res: u8) -> (u8, u8, u32, u32) {

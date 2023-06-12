@@ -11,7 +11,9 @@
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-VEML6030-MicroPython-Module/tree/14b19d9dffe959efd90a55e7a37e663788ab53ff
 //! [Official Product Site]: https://piico.dev/p3
 //! [Datasheet]: https://www.vishay.com/en/product/84366/
+
 use embedded_hal::i2c::I2c;
+use crate::Driver;
 
 const REG_ALS_CONF: u8 = 0x00;
 const REG_ALS: u8 = 0x04;
@@ -22,7 +24,6 @@ pub struct P3<I2C> {
     address: u8,
 }
 
-use crate::Driver;
 impl<I2C: I2c> Driver<I2C, I2C::Error> for P3<I2C> {
     fn new_inner(i2c: I2C, address: u8) -> Self {
         Self { i2c, address }
