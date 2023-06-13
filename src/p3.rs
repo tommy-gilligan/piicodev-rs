@@ -12,8 +12,8 @@
 //! [Official Product Site]: https://piico.dev/p3
 //! [Datasheet]: https://www.vishay.com/en/product/84366/
 
-use embedded_hal::i2c::I2c;
 use crate::Driver;
+use embedded_hal::i2c::I2c;
 
 const REG_ALS_CONF: u8 = 0x00;
 const REG_ALS: u8 = 0x04;

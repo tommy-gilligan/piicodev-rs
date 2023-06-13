@@ -12,8 +12,8 @@
 //! [Official Product Site]: https://piico.dev/p1
 //! [Datasheet]: https://www.ti.com/product/TMP117
 
-use embedded_hal::i2c::I2c;
 use crate::Driver;
+use embedded_hal::i2c::I2c;
 use fixed::types::I9F7;
 
 const REG_TEMPC: u8 = 0x0;

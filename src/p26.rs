@@ -14,10 +14,10 @@
 //! [Official Product Site]: https://piico.dev/p26
 //! [Datasheet]: https://core-electronics.com.au/attachments/uploads/lis3dh-datasheet.pdf
 
-use embedded_hal::i2c::I2c;
-use num_enum::IntoPrimitive;
 use crate::Driver;
+use embedded_hal::i2c::I2c;
 use fixed::types::I2F14;
+use num_enum::IntoPrimitive;
 
 const REG_CONTROL1: u8 = 0x20;
 const REG_CONTROL3: u8 = 0x22;

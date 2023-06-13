@@ -12,12 +12,12 @@
 //! [Official Product Site]: https://piico.dev/p14
 //! [Datasheet]: https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
 
+use crate::Driver;
 use embedded_graphics::{
     draw_target::DrawTarget, geometry::Size, pixelcolor::BinaryColor, prelude::OriginDimensions,
     Pixel,
 };
 use embedded_hal::i2c::I2c;
-use crate::Driver;
 
 const SET_COL_ADDR: u8 = 0x21;
 const SET_PAGE_ADDR: u8 = 0x22;

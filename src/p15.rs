@@ -12,9 +12,9 @@
 //! [Official Product Site]: https://piico.dev/p15
 //! [Datasheet]: https://datasheet.lcsc.com/lcsc/2007101835_QST-QMC6310U_C669299.pdf
 
+use crate::Driver;
 use embedded_hal::i2c::I2c;
 use rust_decimal::prelude::*;
-use crate::Driver;
 
 const REG_XOUT: u8 = 0x01;
 const REG_YOUT: u8 = 0x03;

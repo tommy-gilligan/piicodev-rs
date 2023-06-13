@@ -12,10 +12,10 @@
 //! [Official Product Site]: https://piico.dev/p29
 //! [Datasheet]: https://www.nxp.com/products/power-management/lighting-driver-and-controller-ics/led-controllers/16-channel-12-bit-pwm-fm-plus-ic-bus-led-controller:PCA9685
 
+use crate::WithDelay;
 use cast::{u16, u32, u8};
 use core::cmp;
 use embedded_hal::{delay::DelayUs, i2c::I2c};
-use crate::WithDelay;
 
 const FREQ: u32 = 50;
 const PERIOD: u32 = 1_000_000 / FREQ;

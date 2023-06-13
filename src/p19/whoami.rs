@@ -8,7 +8,8 @@ impl<I2C: I2c> WhoAmI<I2C, u8> for P19<I2C> {
 
     fn whoami(&mut self) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0];
-        self.i2c.write_read(self.address, &[REG_WHOAMI], &mut data)?;
+        self.i2c
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
         Ok(data[0] >> 4_u8)
     }
 }

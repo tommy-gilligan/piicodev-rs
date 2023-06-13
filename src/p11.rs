@@ -12,9 +12,9 @@
 //! [Official Product Site]: https://piico.dev/p11
 //! [Datasheet]: https://www.te.com/commerce/DocumentDelivery/DDEController?Action=showdoc&DocId=Data+Sheet%7FMS5637-02BA03%7FB1%7Fpdf%7FEnglish%7FENG_DS_MS5637-02BA03_B1.pdf%7FCAT-BLPS0037
 
-use num_enum::IntoPrimitive;
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
+use num_enum::IntoPrimitive;
 
 pub struct P11<I2C, DELAY> {
     i2c: I2C,
@@ -67,7 +67,12 @@ fn set_resolution(index: u8) -> (u8, u8, u32, u32) {
     let time_temp: u32 = time[index as usize];
     let time_pressure: u32 = time[index as usize];
 
-    ((index << 1) | 0b0101_0000, (index << 1) | 0b0100_0000, time_temp, time_pressure)
+    (
+        (index << 1) | 0b0101_0000,
+        (index << 1) | 0b0100_0000,
+        time_temp,
+        time_pressure,
+    )
 }
 
 use crate::WithDelay;

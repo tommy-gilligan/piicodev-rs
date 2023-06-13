@@ -12,9 +12,9 @@
 //! [Official Product Site]: https://piico.dev/p12
 //! [Datasheet]: https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/00001572B.pdf
 
+use crate::Driver;
 use embedded_hal::i2c::I2c;
 use num_enum::IntoPrimitive;
-use crate::Driver;
 
 const MAIN_CONTROL: u8 = 0x00;
 const GENERAL_STATUS: u8 = 0x02;

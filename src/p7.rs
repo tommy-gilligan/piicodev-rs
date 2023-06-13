@@ -12,8 +12,8 @@
 //! [Official Product Site]: https://piico.dev/p7
 //! [Datasheet]: https://www.st.com/resource/en/datasheet/vl53l1x.pdf
 
-use embedded_hal::{delay::DelayUs, i2c::I2c};
 use crate::WithDelay;
+use embedded_hal::{delay::DelayUs, i2c::I2c};
 
 const VL51L1X_DEFAULT_CONFIGURATION: [u8; 93] = [
     0x00, 0x2D,

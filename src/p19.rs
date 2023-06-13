@@ -12,9 +12,9 @@
 //! [Official Product Site]: https://piico.dev/p19
 //! [Datasheet]: https://www.microcrystal.com/fileadmin/Media/Products/RTC/App.Manual/RV-3028-C7_App-Manual.pdf
 
+use crate::Driver;
 use embedded_hal::i2c::I2c;
 use num_enum::IntoPrimitive;
-use crate::Driver;
 
 const REG_STATUS: u8 = 0x0E;
 const REG_UNIX: u8 = 0x1B;

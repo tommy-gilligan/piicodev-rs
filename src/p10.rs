@@ -12,9 +12,9 @@
 //! [Official Product Site]: https://piico.dev/p10
 //! [Datasheet]: https://www.vishay.com/docs/84276/veml6040.pdf
 
+use crate::Driver;
 use embedded_hal::i2c::I2c;
 use palette::{LinSrgb, SrgbLuma};
-use crate::Driver;
 
 const REG_CONF: u8 = 0x00;
 const REG_RED: u8 = 0x08;

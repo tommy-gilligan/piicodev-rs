@@ -12,9 +12,9 @@
 //! [Official Product Site]: https://piico.dev/p23
 //! [Datasheet]: https://github.com/CoreElectronics/CE-PiicoDev-Air-Quality-Sensor-ENS160/raw/main/Documents/ENS160-Datasheet%20v1.1.pdf
 
+use crate::Driver;
 use embedded_hal::i2c::I2c;
 use fixed::types::{U10F6, U7F9};
-use crate::Driver;
 
 const REG_OPMODE: u8 = 0x10;
 const REG_CONFIG: u8 = 0x11;

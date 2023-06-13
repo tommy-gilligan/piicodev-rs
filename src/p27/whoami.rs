@@ -8,7 +8,8 @@ impl<I2C: I2c, DELAY> WhoAmI<I2C, u16> for P27<I2C, DELAY> {
 
     fn whoami(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
-        self.i2c.write_read(self.address, &[REG_WHOAMI], &mut data)?;
+        self.i2c
+            .write_read(self.address, &[REG_WHOAMI], &mut data)?;
         Ok(u16::from_be_bytes(data))
     }
 }
