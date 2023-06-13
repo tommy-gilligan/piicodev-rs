@@ -15,7 +15,7 @@ repository = "https://github.com/tomgilligan/piicodev-drivers/"
 embedded-graphics = "0.7.1"
 embedded-hal = "=1.0.0-alpha.10"
 fugit = ">=0.3.6"
-mfrc522 = { version="0.6.0", features=["eh1"] }
+# mfrc522 = { version="0.6.0", features=["eh1"] }
 libm = ">=0.2.6"
 palette = { version = "0.7.1", default-features = false, features = ["libm"] }
 smart-leds-trait = "0.2.1"
@@ -25,7 +25,6 @@ num_enum = { version = "0.6.1", default-features = false }
 cast = { version = "0.3.0", default-features = false }
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
-chrono = { version = ">=0.4.24", default-features = false }
 cortex-m = ">=0.7"
 cortex-m-rt = ">=0.7"
 defmt = ">= 0.3.2"
@@ -39,7 +38,6 @@ rp-pico = { git = "https://github.com/tomgilligan/rp-hal-boards.git" }
 embedded-hal-mock = { git = "https://github.com/dbrgn/embedded-hal-mock.git", branch = "1-alpha" }
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
-chrono = { version = ">=0.4.24", default-features = false }
 linux-embedded-hal = { git = "https://github.com/tomgilligan/linux-embedded-hal.git" }
 
 # cargo build/run

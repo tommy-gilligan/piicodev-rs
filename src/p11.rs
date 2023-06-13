@@ -68,8 +68,8 @@ fn set_resolution(index: u8) -> (u8, u8, u32, u32) {
     let time_pressure: u32 = time[index as usize];
 
     (
-        (index << 1) | 0b0101_0000,
-        (index << 1) | 0b0100_0000,
+        (index << 1_u8) | 0b0101_0000,
+        (index << 1_u8) | 0b0100_0000,
         time_temp,
         time_pressure,
     )

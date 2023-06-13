@@ -6,11 +6,13 @@
 //! - [Official MicroPython Repository]
 //! - [Official Product Site]
 //! - [Datasheet]
+//! - [Alternative Driver]
 //!
 //! [Official Hardware Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Precision-Temperature-Sensor-TMP117/tree/426af09299dc6ae9f254da7f45ef615f65c0f207
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-TMP117-MicroPython-Module/tree/2678a75ac4efbc8c9a16ceb55335108b04460996
 //! [Official Product Site]: https://piico.dev/p1
 //! [Datasheet]: https://www.ti.com/product/TMP117
+//! [Alternative Driver]: https://github.com/eldruin/tmp1x2-rs
 
 use crate::Driver;
 use embedded_hal::i2c::I2c;
@@ -85,3 +87,5 @@ mod test {
         i2c_clone.done();
     }
 }
+
+pub mod whoami;

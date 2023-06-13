@@ -6,16 +6,20 @@
 //! - [Official MicroPython Repository]
 //! - [Official Product Site]
 //! - [Datasheet]
+//! - [Alternative Driver]
 //!
 //! [Official Hardware Repository]: https://github.com/CoreElectronics/CE-PiicoDev-Atmospheric-Sensor-BME280
 //! [Official MicroPython Repository]: https://github.com/CoreElectronics/CE-PiicoDev-BME280-MicroPython-Module
 //! [Official Product Site]: https://piico.dev/p2
 //! [Datasheet]: https://core-electronics.com.au/attachments/uploads/bme280.pdf
+//! [Alternative Driver]: https://github.com/VersBinarii/bme280-rs
 
 use crate::Driver;
-use cast::u32;
+use cast::{i64, u32};
 use core::num::NonZeroI64;
 use embedded_hal::i2c::I2c;
+use fixed::types::{U22F10, U24F8};
+use rust_decimal::prelude::*;
 
 const REG_TEMP: u8 = 0xFA;
 const REG_PRESS: u8 = 0xF7;
@@ -105,7 +109,7 @@ impl<I2C: I2c> P2<I2C> {
         Ok(())
     }
 
-    pub fn celsius(&mut self) -> Result<i32, I2C::Error> {
+    pub fn celsius(&mut self) -> Result<Decimal, I2C::Error> {
         let mut temperature_data: [u8; 3] = [0; 3];
         self.i2c
             .write_read(self.address, &[REG_TEMP], &mut temperature_data)?;
@@ -116,20 +120,21 @@ impl<I2C: I2c> P2<I2C> {
                 temperature_data[1],
                 temperature_data[2],
             ]) >> 4_i32,
-        ) / 100_i32)
+        ))
     }
 
-    pub fn pascal(&mut self) -> Result<u32, I2C::Error> {
+    pub fn pascal(&mut self) -> Result<U24F8, I2C::Error> {
         let mut pressure_data: [u8; 3] = [0; 3];
         self.i2c
             .write_read(self.address, &[REG_PRESS], &mut pressure_data)?;
 
         Ok(self.compensate_p(
-            i32::from_be_bytes([0, pressure_data[0], pressure_data[1], pressure_data[2]]) >> 4_i32,
-        ) / 256_u32)
+            u32::from_be_bytes([0, pressure_data[0], pressure_data[1], pressure_data[2]]) >> 4_u32,
+        ))
     }
 
-    pub fn relative(&mut self) -> Result<u32, I2C::Error> {
+    // type seems wrong
+    pub fn relative(&mut self) -> Result<U22F10, I2C::Error> {
         let mut humidity_data: [u8; 2] = [0; 2];
         self.i2c
             .write_read(self.address, &[REG_HUM], &mut humidity_data)?;
@@ -139,7 +144,7 @@ impl<I2C: I2c> P2<I2C> {
             0,
             humidity_data[0],
             humidity_data[1],
-        ])) / 1024_u32)
+        ])))
     }
 
     pub fn read_raw(&mut self) -> Result<(), I2C::Error> {
@@ -147,7 +152,7 @@ impl<I2C: I2c> P2<I2C> {
         Ok(())
     }
 
-    fn compensate_t(&mut self, adc_t: i32) -> i32 {
+    fn compensate_t(&mut self, adc_t: i32) -> Decimal {
         let var_1: i32 = (((adc_t >> 3) - ((i32::from(self.temperature_data.unwrap().0)) << 1))
             * i32::from(self.temperature_data.unwrap().1))
             >> 11_i32;
@@ -158,10 +163,10 @@ impl<I2C: I2c> P2<I2C> {
             >> 14;
         let t_fine = var_1 + var_2;
         self.t_fine = Some(t_fine);
-        (t_fine * 5_i32 + 128_i32) >> 8_i32
+        Decimal::new(i64((t_fine * 5_i32 + 128_i32) >> 8_i32), 2)
     }
 
-    fn compensate_p(&mut self, adc_p: i32) -> u32 {
+    fn compensate_p(&mut self, adc_p: u32) -> U24F8 {
         if self.t_fine.is_none() {
             self.celsius().unwrap();
         }
@@ -172,16 +177,16 @@ impl<I2C: I2c> P2<I2C> {
         var_1 = ((var_1 * var_1 * i64::from(self.pressure_data.unwrap().2)) >> 8_i32)
             + ((var_1 * i64::from(self.pressure_data.unwrap().1)) << 12_i32);
         var_1 = (((1 << 47_i32) + var_1) * i64::from(self.pressure_data.unwrap().0)) >> 33_i32;
-        let mut p: i64 = 0x0010_0000_i64 - i64::from(adc_p);
+        let mut p: i64 = 0x0010_0000_i64 - i64(adc_p);
         p = (((p << 31_i32) - var_2) * 3125) / NonZeroI64::new(var_1).unwrap().get();
         var_1 =
             (i64::from(self.pressure_data.unwrap().8) * ((p >> 13_i32) * (p >> 13_i32))) >> 25_i32;
         var_2 = (i64::from(self.pressure_data.unwrap().7) * p) >> 19_i32;
         p = ((p + var_1 + var_2) >> 8_i32) + (i64::from(self.pressure_data.unwrap().6) << 4_i32);
-        u32(p).unwrap()
+        U24F8::from_bits(u32(p).unwrap())
     }
 
-    fn compensate_h(&mut self, adc_h: i32) -> u32 {
+    fn compensate_h(&mut self, adc_h: i32) -> U22F10 {
         if self.t_fine.is_none() {
             self.celsius().unwrap();
         }
@@ -203,13 +208,15 @@ impl<I2C: I2c> P2<I2C> {
             - (((((v_x1_u32r >> 15_i32) * (v_x1_u32r >> 15_i32)) >> 7_i32)
                 * i32::from(self.humidity_data.unwrap().0))
                 >> 4_i32);
-        u32(v_x1_u32r.clamp(0_i32, 419_430_400_i32) >> 12_i32).unwrap()
+        U22F10::from_bits(u32(v_x1_u32r.clamp(0_i32, 419_430_400_i32) >> 12_i32).unwrap())
     }
 }
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
     use crate::Driver;
+    use fixed::types::{U22F10, U24F8};
+    use rust_decimal::Decimal;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;
@@ -232,7 +239,7 @@ mod test {
             humidity_data: None,
             t_fine: None,
         };
-        assert_eq!(p2.compensate_t(0x0008_0020), 2_000_i32);
+        assert_eq!(p2.compensate_t(0x0008_0020), Decimal::new(2_000, 2));
         assert_eq!(p2.t_fine, Some(102_404_i32));
         i2c_clone.done();
     }
@@ -252,7 +259,7 @@ mod test {
             t_fine: Some(102_404_i32),
         };
 
-        assert_eq!(p2.compensate_p(0x0005_9386), 25_939_210);
+        assert_eq!(p2.compensate_p(0x0005_9386), U24F8::lit("101325.04"));
         i2c_clone.done();
     }
 
@@ -271,7 +278,7 @@ mod test {
             t_fine: Some(102_404_i32),
         };
 
-        assert_eq!(p2.compensate_h(0x6ae4), 51204);
+        assert_eq!(p2.compensate_h(0x6ae4), U22F10::lit("50.004"));
         i2c_clone.done();
     }
 
@@ -403,7 +410,7 @@ mod test {
             humidity_data: None,
             t_fine: Some(112_786_i32),
         };
-        assert_eq!(p2.celsius().unwrap(), 22_i32);
+        assert_eq!(p2.celsius().unwrap(), Decimal::new(2203, 2));
 
         i2c_clone.done();
     }
@@ -426,7 +433,7 @@ mod test {
             humidity_data: None,
             t_fine: Some(111_446_i32),
         };
-        assert_eq!(p2.pascal().unwrap(), 102_003);
+        assert_eq!(p2.pascal().unwrap(), U24F8::lit("102_003.69"));
 
         i2c_clone.done();
     }
@@ -445,8 +452,10 @@ mod test {
             humidity_data: Some((75, 374, 0, 290, 50, 30)),
             t_fine: Some(111_902_i32),
         };
-        assert_eq!(p2.relative().unwrap(), 80);
+        assert_eq!(p2.relative().unwrap(), U22F10::lit("80.772"));
 
         i2c_clone.done();
     }
 }
+
+pub mod whoami;
