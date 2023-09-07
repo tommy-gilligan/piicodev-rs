@@ -296,7 +296,10 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P27::new(i2c, 0x09, embedded_hal_mock::eh1::delay::NoopDelay {}).unwrap().init().unwrap();
+        P27::new(i2c, 0x09, embedded_hal_mock::eh1::delay::NoopDelay {})
+            .unwrap()
+            .init()
+            .unwrap();
 
         i2c_clone.done();
     }
