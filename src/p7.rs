@@ -171,8 +171,8 @@ mod test {
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
-    use embedded_hal_mock::delay::MockNoop;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use embedded_hal_mock::eh1::delay::NoopDelay;
+    use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p7::P7;
 
@@ -197,7 +197,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P7::new(i2c, 0x29, MockNoop {}).unwrap().init().unwrap();
+        P7::new(i2c, 0x29, embedded_hal_mock::eh1::delay::NoopDelay {}).unwrap().init().unwrap();
         i2c_clone.done();
     }
 
@@ -213,7 +213,7 @@ mod test {
         let mut p7 = P7 {
             i2c,
             address: 0x29,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
         p7.reset().unwrap();
 
@@ -236,7 +236,7 @@ mod test {
         let mut p7 = P7 {
             i2c,
             address: 0x29,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
         assert_eq!(p7.read().unwrap(), 1000);
 

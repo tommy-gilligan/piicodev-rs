@@ -206,8 +206,8 @@ mod test {
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
-    use embedded_hal_mock::delay::MockNoop;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use embedded_hal_mock::eh1::delay::NoopDelay;
+    use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p11::{set_resolution, P11};
 
@@ -217,7 +217,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P11::new(i2c, 0x76, MockNoop {}).unwrap().init().unwrap();
+        P11::new(i2c, 0x76, embedded_hal_mock::eh1::delay::NoopDelay {}).unwrap().init().unwrap();
         i2c_clone.done();
     }
 
@@ -238,7 +238,7 @@ mod test {
         let mut p11 = P11 {
             i2c,
             address: 0x76,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             coefficient_valid: false,
             eeprom_coefficient: [0; 7],
         };
@@ -267,7 +267,7 @@ mod test {
         let mut p11 = P11 {
             i2c,
             address: 0x76,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             coefficient_valid: false,
             eeprom_coefficient: [0; 7],
         };
@@ -298,7 +298,7 @@ mod test {
         let mut p11 = P11 {
             i2c,
             address: 0x76,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             coefficient_valid: false,
             eeprom_coefficient: [0; 7],
         };
@@ -325,7 +325,7 @@ mod test {
         let mut p11 = P11 {
             i2c,
             address: 0x76,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             coefficient_valid: true,
             // exercises temp < 2000 branch
             eeprom_coefficient: [

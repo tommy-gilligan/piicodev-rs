@@ -125,8 +125,8 @@ mod test {
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
-    use embedded_hal_mock::delay::MockNoop;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use embedded_hal_mock::eh1::delay::NoopDelay;
+    use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p29::P29;
 
@@ -143,7 +143,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P29::new(i2c, 0x44, MockNoop {}).unwrap().init().unwrap();
+        P29::new(i2c, 0x44, embedded_hal_mock::eh1::delay::NoopDelay {}).unwrap().init().unwrap();
 
         i2c_clone.done();
     }
@@ -157,7 +157,7 @@ mod test {
         let mut p29 = P29 {
             i2c,
             address: 0x44,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
 
         p29.reset().unwrap();
@@ -176,7 +176,7 @@ mod test {
         let mut p29 = P29 {
             i2c,
             address: 0x44,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
 
         p29.set_pwm(0, 528, 259).unwrap();
@@ -195,7 +195,7 @@ mod test {
         let mut p29 = P29 {
             i2c,
             address: 0x44,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
 
         p29.set_pwm(1, 528, 259).unwrap();
@@ -215,7 +215,7 @@ mod test {
         let mut p29 = P29 {
             i2c,
             address: 0x44,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
 
         assert_eq!(p29.get_pwm(0), Ok((1315, 1588)));
@@ -235,7 +235,7 @@ mod test {
         let mut p29 = P29 {
             i2c,
             address: 0x44,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
 
         assert_eq!(p29.get_pwm(1), Ok((1315, 1588)));
@@ -257,7 +257,7 @@ mod test {
         let mut p29 = P29 {
             i2c,
             address: 0x44,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
 
         p29.set_frequency(50).unwrap();
@@ -276,7 +276,7 @@ mod test {
         let mut p29 = P29 {
             i2c,
             address: 0x44,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
 
         p29.set_speed(3, 1).unwrap();
@@ -296,7 +296,7 @@ mod test {
         let mut p29 = P29 {
             i2c,
             address: 0x44,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
         };
 
         p29.set_angle(3, 20.0).unwrap();

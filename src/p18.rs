@@ -106,7 +106,7 @@ mod test {
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
     use embedded_hal::i2c::ErrorKind;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use fugit::{ExtU32, RateExtU32};
 
     use crate::p18::{Error, P18};

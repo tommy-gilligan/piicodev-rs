@@ -20,7 +20,7 @@ mod whoami_test {
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::{p2::P2, WhoAmI};
 

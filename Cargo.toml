@@ -13,7 +13,7 @@ repository = "https://github.com/tomgilligan/piicodev-drivers/"
 
 [dependencies]
 embedded-graphics = ">=0.7.1"
-embedded-hal = ">= 1.0.0-alpha.10"
+embedded-hal = ">= 1.0.0-alpha.rc.1"
 fugit = ">=0.3.6"
 # mfrc522 = { version="0.6.0", features=["eh1"] }
 libm = ">=0.2.6"
@@ -32,13 +32,10 @@ defmt-rtt = ">=0.4"
 fugit = ">=0.3.6"
 embedded-hal = ">=1.0.0-alpha.10"
 panic-probe = { version = ">=0.3", features = ["print-defmt"] }
-rp-pico = { git = "https://github.com/tomgilligan/rp-hal-boards.git" }
+rp-pico = { git = "https://github.com/rp-rs/rp-hal-boards.git" }
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
-embedded-hal-mock = { git = "https://github.com/dbrgn/embedded-hal-mock.git", branch = "1-alpha" }
-
-[target.'cfg(target_os = "linux")'.dev-dependencies]
-linux-embedded-hal = { git = "https://github.com/tomgilligan/linux-embedded-hal.git" }
+embedded-hal-mock = { git = "https://github.com/newAM/embedded-hal-mock.git", branch = "eh1-rc.1", features = ["eh1"] }
 
 # cargo build/run
 [profile.dev]

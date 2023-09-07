@@ -265,8 +265,8 @@ mod test {
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
     use embedded_hal::i2c::ErrorKind;
-    use embedded_hal_mock::delay::MockNoop;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use embedded_hal_mock::eh1::delay::NoopDelay;
+    use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use fugit::RateExtU32;
 
     use crate::p27::{Error, P27};
@@ -296,7 +296,7 @@ mod test {
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
-        P27::new(i2c, 0x09, MockNoop {}).unwrap().init().unwrap();
+        P27::new(i2c, 0x09, embedded_hal_mock::eh1::delay::NoopDelay {}).unwrap().init().unwrap();
 
         i2c_clone.done();
     }
@@ -317,7 +317,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         p27.set_radio_frequency(917_u32.MHz()).unwrap();
@@ -333,7 +333,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(
@@ -352,7 +352,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(
@@ -376,7 +376,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         p27.set_bit_rate(9_600).unwrap();
@@ -392,7 +392,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.set_bit_rate(u32::MAX), Err(Error::ArgumentError));
@@ -408,7 +408,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.set_bit_rate(0), Err(Error::ArgumentError));
@@ -427,7 +427,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         p27.set_tx_power(3).unwrap();
@@ -446,7 +446,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.get_tx_power(), Ok(-1));
@@ -462,7 +462,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.new_payload(), Ok(true));
@@ -478,7 +478,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.new_payload(), Ok(false));
@@ -494,7 +494,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         p27.set_destination_radio_address(12).unwrap();
@@ -510,7 +510,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.get_destination_radio_address(), Ok(43));
@@ -531,7 +531,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.send(31, b"wave"), Ok(()));
@@ -549,7 +549,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.send(31, b"wave"), Err(Error::I2cError(i2c_error)));
@@ -565,7 +565,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         let mut data: [u8; 5] = [0; 5];
@@ -587,7 +587,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         let mut data: [u8; 5] = [0; 5];
@@ -605,7 +605,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.enable(), Ok(()));
@@ -621,7 +621,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.disable(), Ok(()));
@@ -637,7 +637,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.enabled(), Ok(true));
@@ -653,7 +653,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.enabled(), Ok(false));
@@ -669,7 +669,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.transceiver_ready(), Ok(false));
@@ -685,7 +685,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.transceiver_ready(), Ok(true));
@@ -700,7 +700,7 @@ mod test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.reset(), Ok(()));

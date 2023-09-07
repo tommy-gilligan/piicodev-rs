@@ -160,7 +160,7 @@ mod test {
         prelude::*,
         primitives::{PrimitiveStyle, Rectangle},
     };
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::p14::P14;
     use crate::Driver;

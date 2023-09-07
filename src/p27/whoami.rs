@@ -20,8 +20,8 @@ mod whoami_test {
     use std::vec;
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
-    use embedded_hal_mock::delay::MockNoop;
-    use embedded_hal_mock::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
+    use embedded_hal_mock::eh1::delay::NoopDelay;
+    use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
     use crate::{p27::P27, WhoAmI};
 
@@ -33,7 +33,7 @@ mod whoami_test {
 
         let mut p27 = P27 {
             i2c,
-            delay: MockNoop {},
+            delay: embedded_hal_mock::eh1::delay::NoopDelay {},
             address: 0x09,
         };
         assert_eq!(p27.whoami(), Ok(258));
