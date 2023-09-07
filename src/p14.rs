@@ -232,17 +232,20 @@ mod test {
     #[test]
     pub fn size() {
         let i2c = I2cMock::new(&[]);
+        let mut i2c_clone = i2c.clone();
         let p14 = P14 {
             i2c,
             address: 0x3C,
             framebuffer: [0; 1024],
         };
         assert_eq!(p14.size(), Size::new(128, 64));
+        i2c_clone.done();
     }
 
     #[test]
     pub fn draw_target() {
         let i2c = I2cMock::new(&[]);
+        let mut i2c_clone = i2c.clone();
         let mut p14 = P14 {
             i2c,
             address: 0x3C,
@@ -297,5 +300,6 @@ mod test {
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             ]
         );
+        i2c_clone.done();
     }
 }
