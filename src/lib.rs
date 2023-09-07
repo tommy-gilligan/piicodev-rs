@@ -1,4 +1,3 @@
-#![feature(int_roundings)]
 #![no_std]
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

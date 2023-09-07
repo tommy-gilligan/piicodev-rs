@@ -20,9 +20,9 @@ use embedded_hal::{delay::DelayUs, i2c::I2c};
 const FREQ: u32 = 50;
 const PERIOD: u32 = 1_000_000 / FREQ;
 const MIN_US: u32 = 600;
-const MIN_DUTY: u32 = 4095 * MIN_US.div_ceil(PERIOD);
+const MIN_DUTY: u32 = ((4095 * MIN_US) + PERIOD - 1) / PERIOD;
 const MAX_US: u32 = 2400;
-const MAX_DUTY: u32 = 4095 * MAX_US.div_ceil(PERIOD);
+const MAX_DUTY: u32 = ((4095 * MAX_US) + PERIOD - 1) / PERIOD;
 const DEGREES: f64 = 180.0;
 
 #[must_use]
@@ -64,7 +64,7 @@ impl<I2C: I2c, DELAY: DelayUs> P29<I2C, DELAY> {
 
     #[allow(clippy::unwrap_in_result)]
     pub fn set_frequency(&mut self, frequency: u16) -> Result<(), I2C::Error> {
-        let prescale: u8 = u8(6103_u16.div_ceil(frequency)).unwrap();
+        let prescale: u8 = u8((6103_u16 + frequency - 1) / frequency).unwrap();
         let mut data: [u8; 1] = [0];
         self.i2c.write_read(self.address, &[0x00], &mut data)?;
         let old_mode: u8 = data[0];
