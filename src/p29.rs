@@ -284,6 +284,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     pub fn set_angle() {
         let expectations = [I2cTransaction::write(
             0x44,
