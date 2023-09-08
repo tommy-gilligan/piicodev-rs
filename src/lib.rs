@@ -7,22 +7,22 @@ pub enum SetAddressError<E> {
 }
 use embedded_hal::delay::DelayUs;
 use embedded_hal::i2c::I2c;
-trait Atmel<I2C: I2c> {
+pub trait Atmel<I2C: I2c> {
     fn get_led(&mut self) -> Result<bool, I2C::Error>;
     fn set_led(&mut self, on: bool) -> Result<(), I2C::Error>;
     fn firmware(&mut self) -> Result<(u8, u8), I2C::Error>;
     fn set_address(&mut self, new_address: u8) -> Result<(), SetAddressError<I2C::Error>>;
 }
 
-trait WhoAmI<I2C: I2c, T: core::cmp::Eq> {
+pub trait WhoAmI<I2C: I2c, T: core::cmp::Eq> {
     const EXPECTED_WHOAMI: T;
 
     fn whoami(&mut self) -> Result<T, I2C::Error>;
 }
 
 #[derive(Debug)]
-struct OutOfRange;
-trait Driver<I2C: I2c, T> {
+pub struct OutOfRange;
+pub trait Driver<I2C: I2c, T> {
     fn address_check(address: u8) -> Result<(), OutOfRange> {
         if (0x08..=0x77).contains(&address) {
             Ok(())
@@ -52,7 +52,7 @@ trait Driver<I2C: I2c, T> {
     }
 }
 
-trait WithDelay<I2C: I2c, DELAY: DelayUs, T> {
+pub trait WithDelay<I2C: I2c, DELAY: DelayUs, T> {
     fn address_check(address: u8) -> Result<(), OutOfRange> {
         if (0x08..=0x77).contains(&address) {
             Ok(())
