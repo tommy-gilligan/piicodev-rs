@@ -84,15 +84,15 @@ pub trait WithDelay<I2C: I2c, DELAY: DelayUs, T> {
 
 pub mod p1;
 pub mod p10;
-pub mod p11;
+// pub mod p11;
 pub mod p12;
 pub mod p13;
 pub mod p14;
-pub mod p15;
+// pub mod p15;
 pub mod p16;
 pub mod p18;
 pub mod p19;
-pub mod p2;
+// pub mod p2;
 pub mod p21;
 pub mod p22;
 pub mod p23;
