@@ -15,10 +15,13 @@ mod other {
 
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 mod arm {
+    use piicodev::p3::P3;
+
     use defmt::*;
     use defmt_rtt as _;
     use fugit::RateExtU32;
     use panic_probe as _;
+    use piicodev::Driver;
     use piicodev::WithDelay;
     use rp2040_hal::{
         clocks::{init_clocks_and_plls, Clock},
@@ -30,7 +33,6 @@ mod arm {
     };
 
     use core::cell::RefCell;
-    use piicodev::p7::P7;
 
     use embedded_hal::delay::DelayUs;
     #[derive(Debug, PartialEq)]
@@ -75,26 +77,21 @@ mod arm {
 
         let i2c = I2C::i2c0(
             pac.I2C0,
-            pins.gpio8.into_function(), // sda
-            pins.gpio9.into_function(), // scl
+            pins.gpio8.into_mode(), // sda
+            pins.gpio9.into_mode(), // scl
             400.kHz(),
             &mut pac.RESETS,
             100_000_000.Hz(),
         );
 
-        let delay = &RefCell::new(cortex_m::delay::Delay::new(
-            core.SYST,
-            clocks.system_clock.freq().to_Hz(),
-        ));
-        let mut p7 = P7::new(i2c, 0x29, MyDelay(delay)).unwrap().init().unwrap();
-        let mut delay = delay.borrow_mut();
+        let mut p3 = P3::new(i2c, 0x10).unwrap().init().unwrap();
+
+        let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
+        // let mut p7 = P7::new(i2c, 0x29, MyDelay(delay)).unwrap().init().unwrap();
 
         loop {
-            // read the distance in millimetres
-            let dist = p7.read().unwrap();
-            // convert the number to a string and print
-            println!("{} mm", dist);
-            delay.delay_us(100_000);
+            println!("{} lux", p3.read().unwrap());
+            delay.delay_us(1_000_000);
         }
     }
 }
