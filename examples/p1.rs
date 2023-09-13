@@ -15,7 +15,8 @@ mod other {
 
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 mod arm {
-    use piicodev::p3::P3;
+    use fixed::FixedI16;
+    use piicodev::p1::P1;
 
     use defmt::*;
     use defmt_rtt as _;
@@ -84,12 +85,12 @@ mod arm {
             100_000_000.Hz(),
         );
 
-        let mut p3 = P3::new(i2c, 0x10).unwrap().init().unwrap();
+        let mut p1 = P1::new(i2c, 0x48).unwrap().init().unwrap();
 
         let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
         loop {
-            println!("{} lux", p3.read().unwrap());
+            println!("{} °C", p1.read().unwrap().to_num::<i16>());
             delay.delay_us(1_000_000);
         }
     }
