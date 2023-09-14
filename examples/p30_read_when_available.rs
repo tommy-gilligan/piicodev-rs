@@ -17,11 +17,11 @@ mod other {
 mod arm {
     use piicodev::p30::P30;
 
-    use piicodev::Atmel;
     use defmt::*;
     use defmt_rtt as _;
     use fugit::RateExtU32;
     use panic_probe as _;
+    use piicodev::Atmel;
     use piicodev::Driver;
     use piicodev::WithDelay;
     use rp2040_hal::{

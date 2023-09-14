@@ -265,7 +265,7 @@ mod test {
     extern crate embedded_hal;
     extern crate embedded_hal_mock;
     use embedded_hal::i2c::ErrorKind;
-    use embedded_hal_mock::eh1::delay::NoopDelay;
+
     use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     use fugit::RateExtU32;
 

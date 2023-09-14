@@ -210,6 +210,6 @@ mod test {
     }
 }
 
-pub mod helper;
 pub mod atmel;
+pub mod helper;
 pub mod whoami;
