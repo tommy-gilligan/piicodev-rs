@@ -28,3 +28,6 @@
 [submodule "python/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module"]
 	path = python/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module.git
+[submodule "python/CE-PiicoDev-Ultrasonic-Rangefinder-MicroPython-Module"]
+	path = python/CE-PiicoDev-Ultrasonic-Rangefinder-MicroPython-Module
+	url = https://github.com/CoreElectronics/CE-PiicoDev-Ultrasonic-Rangefinder-MicroPython-Module.git

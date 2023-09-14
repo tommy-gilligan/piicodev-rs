@@ -51,14 +51,7 @@ impl<I2C: I2c> Driver<I2C, Error<I2C::Error>> for P30<I2C> {
 }
 
 impl<I2C: I2c> P30<I2C> {
-    /// Returns the [`Length`] between the ultrasound sensor and the surface of a target.
-    // pub fn length(&mut self) -> Result<Length, I2C::Error> {
-    //     Ok(Length::from_millimeters(
-    //         f64::from(self.round_trip_time()?) * self.millimeters_per_microsecond.get() / 2.0,
-    //     ))
-    // }
-
-    pub fn new_sample_available(&mut self) -> Result<bool, I2C::Error> {
+    pub fn ready(&mut self) -> Result<bool, I2C::Error> {
         let mut data: [u8; 1] = [0; 1];
         self.i2c
             .write_read(self.address, &[REG_STATUS], &mut data)?;
@@ -69,7 +62,7 @@ impl<I2C: I2c> P30<I2C> {
         }
     }
 
-    pub fn round_trip_time(&mut self) -> Result<u16, I2C::Error> {
+    pub fn read(&mut self) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0; 2];
         self.i2c.write_read(self.address, &[REG_RAW], &mut data)?;
         Ok(u16::from_be_bytes(data))
@@ -138,14 +131,14 @@ mod test {
     }
 
     #[test]
-    pub fn new_sample_available() {
+    pub fn ready() {
         let expectations = [I2cTransaction::write_read(0x35, vec![0x08], vec![0x01])];
         let i2c = I2cMock::new(&expectations);
         let mut i2c_clone = i2c.clone();
 
         let mut p30 = P30 { i2c, address: 0x35 };
 
-        assert_eq!(p30.new_sample_available(), Ok(true));
+        assert_eq!(p30.ready(), Ok(true));
         i2c_clone.done();
     }
 
@@ -157,12 +150,12 @@ mod test {
 
         let mut p30 = P30 { i2c, address: 0x35 };
 
-        assert_eq!(p30.new_sample_available(), Ok(false));
+        assert_eq!(p30.ready(), Ok(false));
         i2c_clone.done();
     }
 
     #[test]
-    pub fn round_trip_time() {
+    pub fn read() {
         let expectations = [I2cTransaction::write_read(
             0x35,
             vec![0x05],
@@ -173,7 +166,7 @@ mod test {
 
         let mut p30 = P30 { i2c, address: 0x35 };
 
-        assert_eq!(p30.round_trip_time(), Ok(39723));
+        assert_eq!(p30.read(), Ok(39723));
         i2c_clone.done();
     }
 
@@ -215,27 +208,8 @@ mod test {
 
         i2c_clone.done();
     }
-
-    // #[test]
-    // pub fn length() {
-    //     let expectations = [I2cTransaction::write_read(
-    //         0x35,
-    //         vec![0x05],
-    //         vec![0x0B, 0x29],
-    //     )];
-    //     let i2c = I2cMock::new(&expectations);
-    //     let mut i2c_clone = i2c.clone();
-
-    //     let mut p30 = P30 {
-    //         i2c,
-    //         address: 0x35,
-    //         millimeters_per_microsecond: Cell::new(3.2_f64),
-    //     };
-
-    //     assert_eq!(p30.length(), Ok(Length::from_millimeters(4571.2_f64)));
-    //     i2c_clone.done();
-    // }
 }
 
+pub mod helper;
 pub mod atmel;
 pub mod whoami;
