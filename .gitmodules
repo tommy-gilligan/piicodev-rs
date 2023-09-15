@@ -1,33 +1,33 @@
 [submodule "python/CE-PiicoDev-VL53L1X-MicroPython-Module"]
-	path = python/CE-PiicoDev-VL53L1X-MicroPython-Module
+	path = mp/CE-PiicoDev-VL53L1X-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-VL53L1X-MicroPython-Module/
 [submodule "python/CE-PiicoDev-Unified"]
-	path = python/CE-PiicoDev-Unified
+	path = mp/CE-PiicoDev-Unified
 	url = https://github.com/CoreElectronics/CE-PiicoDev-Unified.git
 [submodule "python/CE-PiicoDev-BME280-MicroPython-Module"]
-	path = python/CE-PiicoDev-BME280-MicroPython-Module
+	path = mp/CE-PiicoDev-BME280-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-BME280-MicroPython-Module.git
 [submodule "python/CE-PiicoDev-VEML6040-MicroPython-Module"]
-	path = python/CE-PiicoDev-VEML6040-MicroPython-Module
+	path = mp/CE-PiicoDev-VEML6040-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-VEML6040-MicroPython-Module.git
 [submodule "python/CE-PiicoDev-TMP117-MicroPython-Module"]
-	path = python/CE-PiicoDev-TMP117-MicroPython-Module
+	path = mp/CE-PiicoDev-TMP117-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-TMP117-MicroPython-Module.git
 [submodule "python/CE-PiicoDev-MS5637-MicroPython-Module"]
-	path = python/CE-PiicoDev-MS5637-MicroPython-Module
+	path = mp/CE-PiicoDev-MS5637-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-MS5637-MicroPython-Module.git
 [submodule "python/CE-PiicoDev-ENS160-MicroPython-Module"]
-	path = python/CE-PiicoDev-ENS160-MicroPython-Module
+	path = mp/CE-PiicoDev-ENS160-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-ENS160-MicroPython-Module.git
 [submodule "python/CE-PiicoDev-VEML6030-MicroPython-Module"]
-	path = python/CE-PiicoDev-VEML6030-MicroPython-Module
+	path = mp/CE-PiicoDev-VEML6030-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-VEML6030-MicroPython-Module.git
 [submodule "python/CE-PiicoDev-RV3028-MicroPython-Module"]
-	path = python/CE-PiicoDev-RV3028-MicroPython-Module
+	path = mp/CE-PiicoDev-RV3028-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-RV3028-MicroPython-Module.git
 [submodule "python/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module"]
-	path = python/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module
+	path = mp/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module.git
 [submodule "python/CE-PiicoDev-Ultrasonic-Rangefinder-MicroPython-Module"]
-	path = python/CE-PiicoDev-Ultrasonic-Rangefinder-MicroPython-Module
+	path = mp/CE-PiicoDev-Ultrasonic-Rangefinder-MicroPython-Module
 	url = https://github.com/CoreElectronics/CE-PiicoDev-Ultrasonic-Rangefinder-MicroPython-Module.git

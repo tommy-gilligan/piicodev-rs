@@ -200,15 +200,30 @@ fn ci() {
     }
 }
 
+fn download_micropython() {
+    std::fs::write(
+        "micropython.uf2",
+        reqwest::blocking::get(
+            "https://micropython.org/resources/firmware/RPI_PICO_W-20230426-v1.20.0.uf2",
+        )
+        .unwrap()
+        .bytes()
+        .unwrap(),
+    )
+    .unwrap();
+}
+
 fn main() {
     let cmd = clap::Command::new("xtask")
         .bin_name("xtask")
         .subcommand_required(true)
         .subcommand(clap::command!("ci"))
+        .subcommand(clap::command!("download-micropython"))
         .subcommand(clap::command!("check-links"));
     let matches = cmd.get_matches();
     match matches.subcommand() {
         Some(("check-links", _)) => check_links(),
+        Some(("download-micropython", _)) => download_micropython(),
         Some(("ci", _)) => ci(),
         _ => unreachable!("clap should ensure we don't get here"),
     };

@@ -2,7 +2,7 @@ set -e
 RUST_ASSETS_DIR=target/thumbv6m-none-eabi/debug/examples
 OUR_EXAMPLE_NAME=p7
 
-MICROPYTHON_ASSETS_DIR=python
+MICROPYTHON_ASSETS_DIR=mp
 MICROPYTHON_BIN=flash.bin
 MICROPYTHON_LIBS="
 CE-PiicoDev-Unified/min/PiicoDev_Unified.py

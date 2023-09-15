@@ -25,6 +25,7 @@ cast = { version = ">=0.3.0", default-features = false }
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
 embedded-hal-mock = { git = "https://github.com/newAM/embedded-hal-mock.git", branch = "eh1-rc.1", features = ["eh1"] }
+mp = { path = "mp" }
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
 cortex-m = ">=0.7"
@@ -89,4 +90,4 @@ lto = 'fat'
 opt-level = 3
 
 [workspace]
-members = ["xtask"]
+members = ["xtask", "mp"]
