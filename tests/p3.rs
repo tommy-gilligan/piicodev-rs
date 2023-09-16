@@ -1,3 +1,4 @@
+#![cfg(feature = "acceptance")]
 mod support;
 
 fn parse_line(line: String) -> f64 {

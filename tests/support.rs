@@ -1,3 +1,4 @@
+#![cfg(feature = "acceptance")]
 use mp::Remote;
 use std::{
     ffi::OsStr,
