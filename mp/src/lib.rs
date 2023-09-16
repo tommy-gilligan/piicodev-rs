@@ -19,14 +19,14 @@ pub fn install_uf2<S: AsRef<std::path::Path>>(path: S) {
     let (bin, family_to_target_addr) = uf2_decode::convert_from_uf2(&buf).unwrap();
     temp.write_all(&bin).unwrap();
     assert_eq!(family_to_target_addr.len(), 1);
-    assert_eq!(0xe48bff56, *family_to_target_addr.keys().next().unwrap());
-    assert_eq!(0x10000000, *family_to_target_addr.get(&0xe48bff56).unwrap());
+    assert_eq!(0xe48b_ff56, *family_to_target_addr.keys().next().unwrap());
+    assert_eq!(0x1000_0000, family_to_target_addr[&0xe48b_ff56]);
 
     let probes = Probe::list_all();
     let probe = probes[0].open().unwrap();
     let mut session = probe.attach("rp2040", Permissions::default()).unwrap();
     let bin_options = BinOptions {
-        base_address: Some(0x0000000010000000),
+        base_address: Some(0x0000_0000_1000_0000),
         skip: 0,
     };
     temp.flush().unwrap();
@@ -58,7 +58,7 @@ impl Remote {
             .lines()
             .filter_map(|line| {
                 if line.ends_with("MicroPython Board in FS mode") {
-                    Some(line.split(|b| b == ' ').next().unwrap().to_string())
+                    Some(line.split(|b| b == ' ').next().unwrap().to_owned())
                 } else {
                     None
                 }
@@ -68,7 +68,7 @@ impl Remote {
 
     pub fn new(dev_path: &str) -> Self {
         Self {
-            dev_path: dev_path.to_string(),
+            dev_path: dev_path.to_owned(),
         }
     }
 
