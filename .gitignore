@@ -4,6 +4,8 @@
 Cargo.lock
 target/
 micropython.uf2
+flash.bin
+.DS_STORE
 
 # editor files
 .vscode/*
