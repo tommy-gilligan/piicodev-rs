@@ -93,7 +93,7 @@ mod arm {
 
         loop {
             if p30.ready().unwrap() {
-                println!("{}", millimetres_from(p30.read().unwrap()).to_num::<f32>());
+                println!("{}", millimetres_from(p30.read().unwrap()).to_num::<i16>());
             }
             delay.delay_us(100_000);
         }

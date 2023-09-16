@@ -91,7 +91,7 @@ mod arm {
         let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
         loop {
-            println!("{}", millimetres_from(p30.read().unwrap()).to_num::<f32>());
+            println!("{}", millimetres_from(p30.read().unwrap()).to_num::<i16>());
             let led_status = p30.get_led().unwrap();
             p30.set_led(!led_status).unwrap();
             delay.delay_us(100_000);

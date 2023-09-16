@@ -5,8 +5,8 @@ use probe_rs::{
 use std::{
     ffi::OsStr,
     fs::{canonicalize, File},
-    io::{BufRead, BufReader, Read, Write},
-    process::{Command, Stdio},
+    io::{Read, Write},
+    process::{Child, Command, Stdio},
     thread, time,
 };
 use tempfile::NamedTempFile;
@@ -93,18 +93,13 @@ impl Remote {
         assert!(status.success());
     }
 
-    pub fn run<S: AsRef<OsStr>>(&mut self, path: S) -> impl Iterator<Item = String> {
-        let mut command = self.connect();
-        let child = command
+    pub fn run<S: AsRef<OsStr>>(&mut self, path: S) -> Child {
+        self.connect()
             .arg("run")
             .arg(path)
             .stderr(Stdio::null())
             .stdout(Stdio::piped())
             .spawn()
-            .unwrap();
-
-        BufReader::new(child.stdout.unwrap())
-            .lines()
-            .map(|f| f.unwrap())
+            .unwrap()
     }
 }
