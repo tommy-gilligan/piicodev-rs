@@ -1,6 +1,5 @@
 use fixed::types::U20F12;
 
-#[must_use]
 pub fn millimetres_from(microseconds: u16) -> U20F12 {
     U20F12::from_num(microseconds) * U20F12::lit("0.1715")
 }
