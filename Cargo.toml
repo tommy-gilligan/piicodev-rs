@@ -24,10 +24,10 @@ num_enum = { version = ">= 0.6.1", default-features = false }
 cast = { version = ">=0.3.0", default-features = false }
 
 [features]
-acceptance = []
+acceptance = ["mp"]
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dependencies]
-mp = { path = "mp" }
+mp = { path = "mp", optional = true }
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
 embedded-hal-mock = { git = "https://github.com/newAM/embedded-hal-mock.git", branch = "eh1-rc.1", features = ["eh1"] }

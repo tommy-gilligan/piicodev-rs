@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-probe-rs = { git = "https://github.com/tommy-gilligan/probe-rs.git", default-features = false, features = [ "builtin-targets", "rtt" ] }
+probe-rs = "0.20.0"
 tempfile = "3.8.0"
 uf2-decode = "0.1.0"
