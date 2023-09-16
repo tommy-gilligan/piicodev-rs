@@ -111,4 +111,4 @@ jobs:
           target: thumbv6m-none-eabi
       - run: cargo install cargo-tarpaulin cargo-udeps -Z install-upgrade
       - run: cargo udeps
-      - run: cargo tarpaulin --exclude-files 'xtask/*' --exclude-files 'p*/examples/*' --fail-under 95 --engine LLvm --skip-clean
+      - run: cargo tarpaulin --exclude-files 'mp/*' --exclude-files 'xtask/*' --exclude-files 'examples/*' --fail-under 95 --engine LLvm --skip-clean
