@@ -108,9 +108,5 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-coverage-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          target: thumbv6m-none-eabi
-      - run: cargo install cargo-tarpaulin cargo-udeps -Z install-upgrade
-      - run: cargo udeps
+      - run: cargo install cargo-tarpaulin
       - run: cargo tarpaulin --exclude-files 'mp/*' --exclude-files 'xtask/*' --exclude-files 'examples/*' --fail-under 95 --engine LLvm --skip-clean
