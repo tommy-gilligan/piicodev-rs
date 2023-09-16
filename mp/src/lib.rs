@@ -46,6 +46,7 @@ pub struct Remote {
 }
 
 impl Remote {
+    #[must_use]
     pub fn dev_paths() -> Vec<String> {
         let mpremote_devs = Command::new("mpremote")
             .arg("devs")
@@ -66,6 +67,7 @@ impl Remote {
             .collect()
     }
 
+    #[must_use]
     pub fn new(dev_path: &str) -> Self {
         Self {
             dev_path: dev_path.to_owned(),
