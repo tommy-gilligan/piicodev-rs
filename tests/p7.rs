@@ -19,10 +19,8 @@ fn p7_test() {
     .map(parse_line)
     .collect();
 
-    let output: Vec<i16> = support::run_example("p7")
-        .take(10)
-        .map(parse_line)
-        .collect();
+    let mut example = support::Example::run("p7");
+    let output: Vec<i16> = example.output().take(10).map(parse_line).collect();
 
     assert!(output
         .iter()
