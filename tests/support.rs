@@ -41,7 +41,7 @@ impl Example {
 
     pub fn output(&mut self) -> impl Iterator<Item = String> + '_ {
         let buf_reader = BufReader::new(self.child.stdout.as_mut().unwrap());
-        buf_reader.lines().map(|f| f.unwrap())
+        buf_reader.lines().map(Result::unwrap)
     }
 }
 
