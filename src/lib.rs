@@ -1,4 +1,5 @@
 #![no_std]
+#![doc = include_str!("../README.md")]
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SetAddressError<E> {
