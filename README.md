@@ -3,26 +3,15 @@
 > PiicoDev hardware \[from Core Electronics\] has been designed from the
 > ground-up with rapid prototyping and maker education in mind.
 
-[Core Electronics] already provides .  There is no official [excellent
-MicroPython support] Rust support however.  This repository provides
-_unofficial_ Rust drivers for PiicoDev hardware.
+[Core Electronics] already provides [excellent MicroPython support].
+This repository provides _unofficial_ Rust drivers for PiicoDev hardware.
 
 ## Supported Devices
 
-- [Precision Temperature Sensor](./p1/)
-- [Ambient Light Sensor](./p3/)
-- [Laser Distance Sensor](./p7/)
-- [Color Sensor](./p10/)
-- [Pressure Sensor](./p11/)
-- [Capacitive Touch Sensor](./p12/)
-- [3x RGB LED](./p13/)
-- [OLED Display](./p14/)
-- [Buzzer](./p18/)
-- [Button](./p21/)
-- [Potentiometer](./p22/)
-- [Transceiver](./p27/)
-- [Servo Driver](./p29/)
-- [Ultrasonic Rangefinder](./p30/)
+- [Precision Temperature Sensor](src/p1/)
+- [Ambient Light Sensor](src/p3/)
+- [Laser Distance Sensor](src/p7/)
+- [Ultrasonic Rangefinder](src/p30/)
 
 [Core Electronics]: https://core-electronics.com.au
 [excellent MicroPython support]: https://github.com/CoreElectronics
