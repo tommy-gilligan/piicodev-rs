@@ -19,7 +19,7 @@ mod arm {
     use defmt_rtt as _;
     use fugit::RateExtU32;
     use panic_probe as _;
-    use piicodev::WithDelay;
+    use piicodev::DriverUsingDelay;
     use rp2040_hal::{
         clocks::{init_clocks_and_plls, Clock},
         entry,

@@ -52,7 +52,7 @@ pub trait Driver<I2C: I2c, T> {
     }
 }
 
-pub trait WithDelay<I2C: I2c, DELAY: DelayUs, T> {
+pub trait DriverUsingDelay<I2C: I2c, DELAY: DelayUs, T> {
     fn address_check(address: u8) -> Result<(), OutOfRange> {
         if (0x08..=0x77).contains(&address) {
             Ok(())

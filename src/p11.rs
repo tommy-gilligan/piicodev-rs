@@ -75,8 +75,8 @@ fn set_resolution(index: u8) -> (u8, u8, u32, u32) {
     )
 }
 
-use crate::WithDelay;
-impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, I2C::Error> for P11<I2C, DELAY> {
+use crate::DriverUsingDelay;
+impl<I2C: I2c, DELAY: DelayUs> DriverUsingDelay<I2C, DELAY, I2C::Error> for P11<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
@@ -200,7 +200,7 @@ impl<I2C: I2c, DELAY: DelayUs> P11<I2C, DELAY> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
-    use crate::WithDelay;
+    use crate::DriverUsingDelay;
     use rust_decimal::prelude::*;
     extern crate std;
     use std::vec;

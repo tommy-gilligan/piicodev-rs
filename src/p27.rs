@@ -12,7 +12,7 @@
 //! [Official Product Site]: https://piico.dev/p27
 //! [Datasheet]: https://www.hoperf.com/data/upload/portal/20190307/RFM69HCW-V1.1.pdf
 
-use crate::WithDelay;
+use crate::DriverUsingDelay;
 use cast::usize;
 use core::num::TryFromIntError;
 use embedded_hal::{delay::DelayUs, i2c::I2c};
@@ -58,7 +58,7 @@ impl<E> From<E> for Error<E> {
     }
 }
 
-impl<I2C: I2c, DELAY: DelayUs> WithDelay<I2C, DELAY, Error<I2C::Error>> for P27<I2C, DELAY> {
+impl<I2C: I2c, DELAY: DelayUs> DriverUsingDelay<I2C, DELAY, Error<I2C::Error>> for P27<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
@@ -259,7 +259,7 @@ impl<I2C: I2c, DELAY: DelayUs> P27<I2C, DELAY> {
 
 #[cfg(all(test, not(all(target_arch = "arm", target_os = "none"))))]
 mod test {
-    use crate::WithDelay;
+    use crate::DriverUsingDelay;
     extern crate std;
     use std::vec;
     extern crate embedded_hal;

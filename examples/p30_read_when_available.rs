@@ -23,7 +23,7 @@ mod arm {
     use panic_probe as _;
     use piicodev::Atmel;
     use piicodev::Driver;
-    use piicodev::WithDelay;
+    use piicodev::DriverUsingDelay;
     use rp2040_hal::{
         clocks::{init_clocks_and_plls, Clock},
         entry,
