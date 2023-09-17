@@ -109,4 +109,4 @@ jobs:
             target/
           key: ${{ runner.os }}-coverage-cargo-${{ hashFiles('**/Cargo.toml') }}
       - run: cargo install cargo-tarpaulin
-      - run: cargo tarpaulin --exclude-files 'mp/*' --exclude-files 'xtask/*' --exclude-files 'tests/*' --exclude-files 'examples/*' --fail-under 95 --engine LLvm --skip-clean
+      - run: cargo tarpaulin --exclude-files 'mp/*' --exclude-files 'xtask/*' --exclude-files 'tests/*' --exclude-files 'examples/*' --fail-under 95 --engine LLvm --skip-clean --no-default-features
