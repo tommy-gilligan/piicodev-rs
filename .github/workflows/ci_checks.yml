@@ -108,5 +108,6 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-coverage-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - run: cargo install cargo-tarpaulin
+      - run: cargo install cargo-tarpaulin cargo-deny
+      - run: cargo deny check
       - run: cargo tarpaulin --exclude-files 'mp/*' --exclude-files 'xtask/*' --exclude-files 'tests/*' --exclude-files 'examples/*' --fail-under 95 --engine LLvm --skip-clean --no-default-features
