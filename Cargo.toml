@@ -1,15 +1,15 @@
 [package]
-name = "piicodev"
+name = "unofficial-piicodev"
 version = "0.1.0"
 description = "d"
-keywords = ["TMP117", "Temperature", "Sensor", "PiicoDev"]
+keywords = ["Driver", "PiicoDev", "i2c"]
 authors = [
-  "Thomas Gilligan <thomas.gilligan@icloud.com>",
+  "Tommy Gilligan <thomas.gilligan@icloud.com>",
 ]
 categories = ["embedded", "hardware-support", "no-std"]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/tomgilligan/piicodev-drivers/"
+repository = "https://github.com/tommy-gilligan/piicodev-rs/"
 
 [dependencies]
 embedded-graphics = ">=0.7.1"
