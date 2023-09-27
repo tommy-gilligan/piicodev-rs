@@ -1,4 +1,4 @@
-//! # Unofficial Rust Driver for PiicoDev Temperature Sensor
+//! # Unofficial Rust Driver for `PiicoDev` Temperature Sensor
 //!
 //! ## External Links
 //!

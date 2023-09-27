@@ -1,4 +1,4 @@
-//! # Unofficial Rust Driver for PiicoDev Laser Distance Sensor
+//! # Unofficial Rust Driver for `PiicoDev` Laser Distance Sensor
 //!
 //! ## External Links
 //!

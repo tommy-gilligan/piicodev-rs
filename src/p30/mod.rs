@@ -1,4 +1,4 @@
-//! # Unofficial Rust Driver for PiicoDev Ultrasonic Rangefinder
+//! # Unofficial Rust Driver for `PiicoDev` Ultrasonic Rangefinder
 //!
 //! ## External Links
 //!

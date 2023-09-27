@@ -1,4 +1,4 @@
-//! # Unofficial Rust Driver for PiicoDev Ambient Light Sensor
+//! # Unofficial Rust Driver for `PiicoDev` Ambient Light Sensor
 //!
 //! ## External Links
 //!
