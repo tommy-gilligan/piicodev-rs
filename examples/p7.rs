@@ -19,7 +19,6 @@ mod arm {
     use defmt_rtt as _;
     use fugit::RateExtU32;
     use panic_probe as _;
-    use piicodev::DriverUsingDelay;
     use rp2040_hal::{
         clocks::{init_clocks_and_plls, Clock},
         entry,
@@ -30,7 +29,7 @@ mod arm {
     };
 
     use core::cell::RefCell;
-    use piicodev::p7::P7;
+    use unofficial_piicodev::{p7::P7, DriverUsingDelay};
 
     use embedded_hal::delay::DelayUs;
     #[derive(Debug, PartialEq)]

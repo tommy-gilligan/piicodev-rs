@@ -16,14 +16,12 @@ mod other {
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 mod arm {
     use fixed::FixedI16;
-    use piicodev::p1::P1;
+    use unofficial_piicodev::{p1::P1, Driver, DriverUsingDelay};
 
     use defmt::*;
     use defmt_rtt as _;
     use fugit::RateExtU32;
     use panic_probe as _;
-    use piicodev::Driver;
-    use piicodev::DriverUsingDelay;
     use rp2040_hal::{
         clocks::{init_clocks_and_plls, Clock},
         entry,

@@ -15,15 +15,13 @@ mod other {
 
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 mod arm {
-    use piicodev::p30::P30;
+    use unofficial_piicodev::{p30::{helper::millimetres_from, P30}, Driver, DriverUsingDelay};
 
     use defmt::*;
     use defmt_rtt as _;
     use fugit::RateExtU32;
     use panic_probe as _;
     use piicodev::Atmel;
-    use piicodev::Driver;
-    use piicodev::DriverUsingDelay;
     use rp2040_hal::{
         clocks::{init_clocks_and_plls, Clock},
         entry,
@@ -34,7 +32,6 @@ mod arm {
     };
 
     use core::cell::RefCell;
-    use piicodev::p30::helper::millimetres_from;
 
     use embedded_hal::delay::DelayUs;
     #[derive(Debug, PartialEq)]
