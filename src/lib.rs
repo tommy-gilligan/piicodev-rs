@@ -6,7 +6,7 @@ pub enum SetAddressError<E> {
     I2cError(E),
     ArgumentError,
 }
-use embedded_hal::delay::DelayUs;
+use embedded_hal::delay::DelayNs;
 use embedded_hal::i2c::I2c;
 pub trait Atmel<I2C: I2c> {
     fn get_led(&mut self) -> Result<bool, I2C::Error>;
@@ -53,7 +53,7 @@ pub trait Driver<I2C: I2c, T> {
     }
 }
 
-pub trait DriverUsingDelay<I2C: I2c, DELAY: DelayUs, T> {
+pub trait DriverUsingDelay<I2C: I2c, DELAY: DelayNs, T> {
     fn address_check(address: u8) -> Result<(), OutOfRange> {
         if (0x08..=0x77).contains(&address) {
             Ok(())

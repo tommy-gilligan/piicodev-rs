@@ -17,7 +17,7 @@
 //! [Alternate Driver]: https://github.com/mitchmindtree/vl53l1
 
 use crate::DriverUsingDelay;
-use embedded_hal::{delay::DelayUs, i2c::I2c};
+use embedded_hal::{delay::DelayNs, i2c::I2c};
 
 const VL51L1X_DEFAULT_CONFIGURATION: [u8; 93] = [
     0x00, 0x2D,
@@ -120,7 +120,7 @@ pub struct P7<I2C, DELAY> {
     delay: DELAY,
 }
 
-impl<I2C: I2c, DELAY: DelayUs> DriverUsingDelay<I2C, DELAY, I2C::Error> for P7<I2C, DELAY> {
+impl<I2C: I2c, DELAY: DelayNs> DriverUsingDelay<I2C, DELAY, I2C::Error> for P7<I2C, DELAY> {
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self {
         Self {
             i2c,
@@ -148,7 +148,7 @@ impl<I2C: I2c, DELAY: DelayUs> DriverUsingDelay<I2C, DELAY, I2C::Error> for P7<I
     }
 }
 
-impl<I2C: I2c, DELAY: DelayUs> P7<I2C, DELAY> {
+impl<I2C: I2c, DELAY: DelayNs> P7<I2C, DELAY> {
     pub fn reset(&mut self) -> Result<(), I2C::Error> {
         self.i2c.write(self.address, &[0x00, 0x00, 0x00])?;
         self.delay.delay_ms(100);
