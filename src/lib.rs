@@ -8,10 +8,21 @@ pub enum SetAddressError<E> {
 }
 use embedded_hal::delay::DelayNs;
 use embedded_hal::i2c::I2c;
+
+/// Some PiicoDev devices include an onboard Atmel MCU that manages access to the device.  These
+/// devices share some functionality in common.  [`Atmel`] groups these together.
 pub trait Atmel<I2C: I2c> {
+    /// Gets whether or not the the LED is powered
     fn get_led(&mut self) -> Result<bool, I2C::Error>;
+    /// Sets whether or not the the LED is powered
     fn set_led(&mut self, on: bool) -> Result<(), I2C::Error>;
+    /// Gets the version of the Atmel firmware as a (major, minor) tuple.
     fn firmware(&mut self) -> Result<(u8, u8), I2C::Error>;
+    /// Sets the I2C address of the device.  A new driver instance must be created to access the
+    /// device when its address is changed.  Some devices also have onboard DIP switches for
+    /// setting a device address.  The interaction between DIP switches and setting the address
+    /// through the driver should be determined experimentally or through interrogation of firmware
+    /// source.
     fn set_address(&mut self, new_address: u8) -> Result<(), SetAddressError<I2C::Error>>;
 }
 
@@ -32,6 +43,14 @@ pub trait Driver<I2C: I2c, T> {
         }
     }
     fn new_inner(i2c: I2C, address: u8) -> Self;
+
+    /// The entry point for a [`Driver`].  Expects [`I2c`] (obtainable from target platform HAL)
+    /// and an I2C device address in the range `0x08..=0x77`.  This provides a handle that does not
+    /// initialize the hardware.  Initialization is deferred to [`Driver::init`].
+    ///
+    /// # Errors
+    ///
+    /// [`OutOfRange`]: address is ouside of the allowed range `0x08..=0x77`
     fn new(i2c: I2C, address: u8) -> Result<Self, OutOfRange>
     where
         Self: Sized,
@@ -45,6 +64,14 @@ pub trait Driver<I2C: I2c, T> {
     {
         Ok(self)
     }
+
+    /// Initializes the hardware.  This initialization is usually required prior to interacting
+    /// with the device.  Some devices do not need initializing before use.  Calling
+    /// [`Driver::init`] will be enforced through state types in the future.
+    ///
+    /// # Errors
+    ///
+    /// [`T`]: a device dependent error type for any problems encountered during initialization.
     fn init(self) -> Result<Self, T>
     where
         Self: Sized,
@@ -61,7 +88,17 @@ pub trait DriverUsingDelay<I2C: I2c, DELAY: DelayNs, T> {
             Err(OutOfRange)
         }
     }
+
     fn new_inner(i2c: I2C, address: u8, delay: DELAY) -> Self;
+
+    /// The entry point for a [`DriverUsingDelay`].  Expects [`I2c`] (obtainable from target
+    /// platform HAL), an I2C device address in the range `0x08..=0x77` and a [`DelayUs`] (also
+    /// usually obtainable from the target platform HAL).  This provides a handle that does not
+    /// initialize the hardware.  Initialization is deferred to [`DriverUsingDelay::init`].
+    ///
+    /// # Errors
+    ///
+    /// [`OutOfRange`]: address is ouside of the allowed range `0x08..=0x77`
     fn new(i2c: I2C, address: u8, delay: DELAY) -> Result<Self, OutOfRange>
     where
         Self: Sized,
@@ -75,6 +112,14 @@ pub trait DriverUsingDelay<I2C: I2c, DELAY: DelayNs, T> {
     {
         Ok(self)
     }
+
+    /// Initializes the hardware.  This initialization is usually required prior to interacting
+    /// with the device.  Some devices do not need initializing before use.  Calling
+    /// [`Driver::init`] will be enforced through state types in the future.
+    ///
+    /// # Errors
+    ///
+    /// [`T`]: a device dependent error type for any problems encountered during initialization.
     fn init(self) -> Result<Self, T>
     where
         Self: Sized,
